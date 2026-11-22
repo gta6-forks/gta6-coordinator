@@ -112,3 +112,9 @@ export function createPlanner(env, opts = {}) {
     return null;
   }
 }
+
+/** Check runs of a commit in a public main fork / coordinator repo (read-only, metadata permission is enough). */
+GitHubPlanner.prototype.checkRuns = async function checkRuns(repo, sha) {
+  const token = (await this.gh.installationToken(this.inst, { repositories: [String(repo).split('/')[1]], permissions: { metadata: 'read' } })).token;
+  return (await this.gh.request('GET', `/repos/${repo}/commits/${sha}/check-runs?per_page=100`, { token })).data.check_runs ?? [];
+};

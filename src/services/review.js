@@ -332,7 +332,7 @@ export async function reportCi(ctx, { commit_sha, conclusion, details_url = null
     for (const review of reviews) {
       ctx.store.exec('UPDATE reviews SET ci_conclusion = ?, updated_at = ? WHERE id = ?', conclusion, now, review.id);
       if (conclusion === 'failure') {
-        rejectReview(ctx, review, [{ from: 'CI', text: `CI falhou para \`${commit_sha}\`${details_url ? `: ${details_url}` : ''}.` }]);
+        rejectReview(ctx, review, [{ from: 'CI', text: `CI failed for \`${commit_sha}\`${details_url ? `: ${details_url}` : ''}.` }]);
       } else if (review.state === 'awaiting_ci') {
         ctx.store.exec("UPDATE reviews SET state = 'ready_to_merge', updated_at = ? WHERE id = ?", now, review.id);
         ctx.store.exec("UPDATE tasks SET status = 'approved', updated_at = ? WHERE id = ?", now, review.task_id);

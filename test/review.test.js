@@ -134,3 +134,20 @@ test('planning tasks must reference a validated proposal and target the coordina
     /passed validation/,
   );
 });
+
+test('CI is read from GitHub check runs: two approvals + green checks -> ready_to_merge', async () => {
+  const { refreshCi } = await import('../src/services/ci-sync.js');
+  const { ctx, done } = await inReview();
+  const review = ctx.store.one('SELECT * FROM reviews WHERE id = ?', done.review_id);
+  ctx.planner = { checkRuns: async (repo, sha) => (sha === review.commit_sha ? [{ status: 'completed', conclusion: 'success' }] : []) };
+  for (const [i, id] of done.verification_tasks.entries()) {
+    const v = await google(ctx);
+    const r = claim(ctx, v.participant, { task_id: id });
+    await submitVerification(ctx, v.participant, { reservation_id: r.reservation.id, verification: verification() });
+    if (i === 0) assert.equal(ctx.store.one('SELECT state FROM reviews WHERE id = ?', done.review_id).state, 'verifying');
+  }
+  assert.equal(ctx.store.one('SELECT state FROM reviews WHERE id = ?', done.review_id).state, 'awaiting_ci');
+  const out = await refreshCi(ctx, { force: true });
+  assert.deepEqual(out.map((o) => o.conclusion), ['success']);
+  assert.equal(ctx.store.one('SELECT state FROM reviews WHERE id = ?', done.review_id).state, 'ready_to_merge');
+});

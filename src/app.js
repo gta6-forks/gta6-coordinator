@@ -18,6 +18,7 @@ import { authenticate } from './services/auth.js';
 import { integrationResult, issueGitCredential, reconcileWorkspaces } from './services/workspace.js';
 import { handleGithubWebhook } from './github/webhooks.js';
 import { metricsBundle } from './services/metrics.js';
+import { refreshCi } from './services/ci-sync.js';
 
 const MAX_BODY = 1024 * 1024;
 
@@ -104,6 +105,7 @@ export function createApp({ store, env, now = () => Date.now(), gitWrite = new P
         }
         const out = await handleRpc(ctx, body, auth);
         await reconcileWorkspaces(ctx);
+        await refreshCi(ctx);
         return out ? json(out) : new Response(null, { status: 202 });
       }
       if (pathname === '/internal/anonymous' && request.method === 'POST') {
@@ -126,7 +128,9 @@ export function createApp({ store, env, now = () => Date.now(), gitWrite = new P
         return json({ participant: { id: participant.id, kind: participant.kind, display_name: participant.display_name } });
       }
       if (pathname === '/internal/sync' && request.method === 'POST') return json(await sync());
-      if (pathname === '/internal/reconcile' && request.method === 'POST') return json({ results: await reconcileWorkspaces(ctx) });
+      if (pathname === '/internal/reconcile' && request.method === 'POST') {
+        return json({ results: await reconcileWorkspaces(ctx), ci: await refreshCi(ctx, { force: true }) });
+      }
       if (pathname === '/api/git/credential' && request.method === 'POST') {
         const participant = await authenticate(ctx, request.headers.get('authorization'));
         const body = await readJson(request);
