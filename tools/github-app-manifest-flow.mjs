@@ -30,13 +30,13 @@ createServer(async (req, res) => {
       ? `https://github.com/organizations/${org}/settings/apps/new`
       : 'https://github.com/settings/apps/new';
     res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
-    res.end(page(`<h1>Criar o GitHub App do coordenador</h1>
-<p>Dono: <b>${org ? esc(org) : 'sua conta pessoal'}</b>. Para criar numa org, abra
-<code>http://127.0.0.1:${PORT}/?org=NOME</code> (a org precisa existir e você ser owner).</p>
+    res.end(page(`<h1>Create the coordinator GitHub App</h1>
+<p>Owner: <b>${org ? esc(org) : 'your personal account'}</b>. To create it in an org, open
+<code>http://127.0.0.1:${PORT}/?org=NAME</code> (the org must exist and you must be an owner).</p>
 <pre style="background:#f4f4f4;padding:12px;overflow:auto">${esc(JSON.stringify(manifest, null, 2))}</pre>
 <form method="post" action="${esc(action)}">
 <input type="hidden" name="manifest" value="${esc(JSON.stringify(manifest))}">
-<button style="font-size:18px;padding:8px 16px">Continuar no GitHub</button></form>`));
+<button style="font-size:18px;padding:8px 16px">Continue on GitHub</button></form>`));
     return;
   }
   if (url.pathname === '/callback') {
@@ -66,9 +66,9 @@ createServer(async (req, res) => {
       chmodSync(OUT, 0o600);
       console.log(`saved App id=${app.id} slug=${app.slug} owner=${app.owner?.login} -> ${OUT}`);
       res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
-      res.end(page(`<h1>App criado: ${esc(app.slug)}</h1><p>Credenciais salvas localmente (arquivo 600). Próximo passo:
-<a href="https://github.com/apps/${esc(app.slug)}/installations/new">instalar o App</a> na org de trabalho,
-em "Only select repositories". Pode fechar esta aba.</p>`));
+      res.end(page(`<h1>App created: ${esc(app.slug)}</h1><p>Credentials saved locally (mode 600). Next step:
+<a href="https://github.com/apps/${esc(app.slug)}/installations/new">install the App</a> on the work org,
+with "All repositories" (dedicated org). You can close this tab.</p>`));
       setTimeout(() => process.exit(0), 500);
     } catch (err) {
       console.error(`conversion failed: ${err.message}`);

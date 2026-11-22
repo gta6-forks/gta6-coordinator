@@ -161,9 +161,25 @@ export async function linkGoogle(ctx, code, claims) {
       if (row.google_sub === claims.sub) return rowToParticipant(row);
       throw new AppError('already_linked', 'This key is already linked to another Google account.', 409);
     }
-    const other = ctx.store.one('SELECT id FROM participants WHERE google_sub = ?', claims.sub);
+    const other = ctx.store.one('SELECT * FROM participants WHERE google_sub = ?', claims.sub);
     if (other) {
-      throw new AppError('google_account_in_use', 'This Google account is already linked to another key. Use that key, or sign in with a different Google account.', 409);
+      // The Google account already has a participant (another machine, lost key...). Attach THIS key to it instead of
+      // leaving the person stuck, as long as this anonymous key has no history of its own to keep separate.
+      if (other.revoked) throw new AppError('participant_revoked', 'This Google account was revoked.', 403);
+      const busy = ctx.store.one(
+        `SELECT 1 AS x FROM reservations WHERE participant_id = ?
+         UNION ALL SELECT 1 FROM usage_reports WHERE participant_id = ?
+         UNION ALL SELECT 1 FROM proposals WHERE participant_id = ? LIMIT 1`,
+        row.id, row.id, row.id,
+      );
+      if (busy) {
+        throw new AppError('google_account_in_use', 'This Google account already has a key, and this key already has work of its own. Keep using this key anonymously, or use the key you linked before.', 409);
+      }
+      ctx.store.exec('UPDATE tokens SET participant_id = ? WHERE participant_id = ?', other.id, row.id);
+      if (!other.profile_json && row.profile_json) ctx.store.exec('UPDATE participants SET profile_json = ? WHERE id = ?', row.profile_json, other.id);
+      ctx.store.exec('UPDATE participants SET revoked = 1 WHERE id = ?', row.id);
+      recordEvent(ctx.store, now, other.id, 'participant.key_attached', { from: row.id });
+      return rowToParticipant(ctx.store.one('SELECT * FROM participants WHERE id = ?', other.id));
     }
     ctx.store.exec(
       "UPDATE participants SET kind = 'google', google_sub = ?, email = ?, display_name = ? WHERE id = ?",

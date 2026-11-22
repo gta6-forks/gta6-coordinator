@@ -7,7 +7,7 @@ export const SEED = {
       "fork_repo": "gta6-forks/Xbox2Windows",
       "github_kind": "issue",
       "url": "https://github.com/R0Y00/Xbox2Windows/issues/77",
-      "title": "pe_map_image: rejeitar diretório de relocação vazio ao mapear fora do ImageBase",
+      "title": "pe_map_image: reject an empty relocation directory when mapping away from ImageBase",
       "kind": "issue",
       "parent": null,
       "type": "operational",
@@ -19,7 +19,7 @@ export const SEED = {
       "state": "open",
       "milestone": "M1-entrada",
       "depends_on": [],
-      "instructions_md": "# Issue #77 — relocação vazia\n\n`tools/pe_map.cpp` aloca a imagem fora do ImageBase (`VirtualAlloc(nullptr, …)`), rejeita `IMAGE_FILE_RELOCS_STRIPPED`, mas aceita um diretório de relocação com `Size == 0`: o loop roda zero vezes e a imagem volta \"mapeada\" com endereços absolutos errados.\n\n1. Leia `AGENTS.md`, `CONTRIBUTING.md` e a issue.\n2. Construa um PE32+ **sintético** (sem nada do jogo) com `RELOCS_STRIPPED` limpo, diretório de relocação vazio e ImageBase diferente do endereço alocado.\n3. Escreva o teste que falha, corrija `pe_map_image` e rode a suíte de PE.\n4. PR com título `pe: …`, comando exato, resultado e `Fixes #77`.",
+      "instructions_md": "# Issue #77 — empty relocation\n\n`tools/pe_map.cpp` allocates the image away from ImageBase (`VirtualAlloc(nullptr, …)`) and rejects `IMAGE_FILE_RELOCS_STRIPPED`, but accepts a relocation directory with `Size == 0`: the loop runs zero times and the image comes back \"mapped\" with wrong absolute addresses.\n\n1. Read `AGENTS.md`, `CONTRIBUTING.md` and the issue.\n2. Build a **synthetic** PE32+ (nothing from the game) with `RELOCS_STRIPPED` cleared, an empty relocation directory and an ImageBase different from the allocated address.\n3. Write the failing test, fix `pe_map_image` and run the PE suite.\n4. PR titled `pe: …`, with the exact command, the result and `Fixes #77`.",
       "requirements": {
         "implementation": {
           "required": [
@@ -29,7 +29,7 @@ export const SEED = {
                 "windows"
               ],
               "confidence": "confirmed",
-              "source": "Xbox2Windows/README.md#first-build; tools/pe_map.cpp usa VirtualAlloc"
+              "source": "Xbox2Windows/README.md#first-build; tools/pe_map.cpp uses VirtualAlloc"
             },
             {
               "kind": "tool",
@@ -45,7 +45,7 @@ export const SEED = {
             },
             {
               "kind": "tool",
-              "value": "Windows SDK 10.0.26100 com DXC",
+              "value": "Windows SDK 10.0.26100 with DXC",
               "confidence": "confirmed",
               "source": "Xbox2Windows/README.md#first-build"
             },
@@ -53,13 +53,13 @@ export const SEED = {
               "kind": "game_files",
               "value": "no",
               "confidence": "confirmed",
-              "source": "issue #77 (reprodução com PE sintético); Xbox2Windows/CONTRIBUTING.md"
+              "source": "issue #77 (reproduction with a synthetic PE); Xbox2Windows/CONTRIBUTING.md"
             }
           ],
           "optional": [
             {
               "kind": "tool",
-              "value": "Python 3.11+ (testes de fixture)",
+              "value": "Python 3.11+ (fixture tests)",
               "confidence": "confirmed",
               "source": "Xbox2Windows/README.md#first-build"
             }
@@ -69,7 +69,7 @@ export const SEED = {
               "kind": "gpu",
               "value": "none",
               "confidence": "inferred",
-              "source": "lógica de loader, sem GPU"
+              "source": "loader logic, no GPU"
             }
           ]
         },
@@ -96,22 +96,22 @@ export const SEED = {
       },
       "acceptance": [
         {
-          "text": "Rejeitar a imagem quando delta != 0 && relocs.Size == 0.",
+          "text": "Reject the image when delta != 0 && relocs.Size == 0.",
           "source": "issue #77 Suggested fix",
           "confidence": "confirmed"
         },
         {
-          "text": "Garantir blocos de relocação completos e válidos antes de reportar sucesso.",
+          "text": "Ensure relocation blocks are complete and valid before reporting success.",
           "source": "issue #77 Suggested fix",
           "confidence": "confirmed"
         },
         {
-          "text": "Teste novo com PE sintético que falha antes e passa depois.",
+          "text": "New test with a synthetic PE that fails before and passes after.",
           "source": "Xbox2Windows/CONTRIBUTING.md",
           "confidence": "confirmed"
         },
         {
-          "text": "PR com título `pe: …`, comando de teste exato com resultado, `Fixes #77`, licença MIT.",
+          "text": "PR titled `pe: …`, exact test command with result, `Fixes #77`, MIT license.",
           "source": "Xbox2Windows/CONTRIBUTING.md#submit-and-review-a-patch",
           "confidence": "confirmed"
         }
@@ -133,8 +133,8 @@ export const SEED = {
         }
       ],
       "restrictions": [
-        "Sem arquivos do jogo",
-        "Não citar o nome do título (Xbox2Windows/AGENTS.md)"
+        "No game files",
+        "Do not mention the title's name (Xbox2Windows/AGENTS.md)"
       ]
     },
     {
@@ -143,7 +143,7 @@ export const SEED = {
       "fork_repo": "gta6-forks/Xbox2Windows",
       "github_kind": "issue",
       "url": "https://github.com/R0Y00/Xbox2Windows/issues/126",
-      "title": "Decodificar a palavra de atributos do XMemAlloc (chamadores Bink e AMD)",
+      "title": "Decode the XMemAlloc attribute word (Bink and AMD callers)",
       "kind": "issue",
       "parent": null,
       "type": "operational",
@@ -155,7 +155,7 @@ export const SEED = {
       "state": "open",
       "milestone": "M1-entrada",
       "depends_on": [],
-      "instructions_md": "# Issue #126 — atributos do XMemAlloc\n\n`src/era_heap.cpp` só aceita o campo de alinhamento (bits 24–28). A issue propõe o layout ERA `XALLOC_ATTRIBUTES` (`dwObjectType:14, dwPageSize:2, dwAllocatorId:8, dwAlignment:5, dwMemoryType:4, reserved:31`) e decodifica `0x05e50000` (Bink) e `0xa8004000` (AMD).\n\n**Pronta para execução só depois que um planejador definir o critério de aceitação** (a issue é uma pergunta). Em aberto: significado do allocatorId `0xE5` e de GRAPHICS_5.",
+      "instructions_md": "# Issue #126 — XMemAlloc attributes\n\n`src/era_heap.cpp` only honors the alignment field (bits 24–28). The issue proposes the ERA `XALLOC_ATTRIBUTES` layout (`dwObjectType:14, dwPageSize:2, dwAllocatorId:8, dwAlignment:5, dwMemoryType:4, reserved:31`) and decodes `0x05e50000` (Bink) and `0xa8004000` (AMD).\n\n**Ready for execution only after a planner defines the acceptance criterion** (the issue is a question). Open: the meaning of allocatorId `0xE5` and of GRAPHICS_5.",
       "requirements": {
         "implementation": {
           "required": [
@@ -165,7 +165,7 @@ export const SEED = {
                 "windows"
               ],
               "confidence": "inferred",
-              "source": "heap é runtime Windows do projeto"
+              "source": "the heap is the project's Windows runtime"
             },
             {
               "kind": "tool",
@@ -177,14 +177,14 @@ export const SEED = {
               "kind": "game_files",
               "value": "no",
               "confidence": "confirmed",
-              "source": "issue #126: as duas palavras já estão publicadas em docs/experiments.md"
+              "source": "issue #126: both words are already published in docs/experiments.md"
             }
           ],
           "optional": [],
           "suggested": [
             {
               "kind": "skill",
-              "value": "Leitura de SlimEra era.h e WinDurango kernelx.h",
+              "value": "Reading SlimEra era.h and WinDurango kernelx.h",
               "confidence": "confirmed",
               "source": "issue #126 Evidence"
             }
@@ -198,7 +198,7 @@ export const SEED = {
                 "windows"
               ],
               "confidence": "inferred",
-              "source": "mesmo build"
+              "source": "same build"
             }
           ],
           "optional": [
@@ -206,7 +206,7 @@ export const SEED = {
               "kind": "game_files",
               "value": "unknown",
               "confidence": "unspecified",
-              "source": "obter palavras novas de outros chamadores não é especificado"
+              "source": "obtaining new words from other callers is not specified"
             }
           ],
           "suggested": []
@@ -214,7 +214,7 @@ export const SEED = {
       },
       "acceptance": [
         {
-          "text": "Critério de conclusão não definido na issue (é uma pergunta).",
+          "text": "Completion criterion not defined in the issue (it is a question).",
           "source": "issue #126",
           "confidence": "unspecified"
         }
@@ -232,7 +232,7 @@ export const SEED = {
         }
       ],
       "restrictions": [
-        "Sem arquivos do jogo"
+        "No game files"
       ]
     },
     {
@@ -241,7 +241,7 @@ export const SEED = {
       "fork_repo": "gta6-forks/Leonida",
       "github_kind": null,
       "url": null,
-      "title": "Layout de system values por estágio (compute, mesh, geometry)",
+      "title": "Per-stage system-value layout (compute, mesh, geometry)",
       "kind": "issue",
       "parent": null,
       "type": "operational",
@@ -253,7 +253,7 @@ export const SEED = {
       "state": "open",
       "milestone": "M2-shaders",
       "depends_on": [],
-      "instructions_md": "# Rascunho — sem issue no GitHub ainda\n\nLeonida README, *Want to help?*: \"Compute, mesh and geometry shaders: their per-stage system-value register layout.\"\n\nCada regra nova entra na tabela de contrato de `docs/design.md` com a forma de confirmação (teste de GPU, referência Mesa/LLVM ou contagem no corpus).",
+      "instructions_md": "# Draft — no GitHub issue yet\n\nLeonida README, *Want to help?*: \"Compute, mesh and geometry shaders: their per-stage system-value register layout.\"\n\nEach new rule goes into the contract table in `docs/design.md` with its form of confirmation (GPU test, Mesa/LLVM reference or corpus count).",
       "requirements": {
         "implementation": {
           "required": [
@@ -265,7 +265,7 @@ export const SEED = {
             },
             {
               "kind": "tool",
-              "value": "LLVM 21+ com target AMDGPU (llvm-mc)",
+              "value": "LLVM 21+ with the AMDGPU target (llvm-mc)",
               "confidence": "confirmed",
               "source": "Leonida/README.md#how-to-build"
             },
@@ -279,7 +279,7 @@ export const SEED = {
               "kind": "game_files",
               "value": "no",
               "confidence": "inferred",
-              "source": "caminhos de evidência por GPU ou Mesa não usam o jogo (Leonida/CONTRIBUTING.md)"
+              "source": "GPU- or Mesa-based evidence paths do not use the game (Leonida/CONTRIBUTING.md)"
             }
           ],
           "optional": [
@@ -290,7 +290,7 @@ export const SEED = {
                 "windows"
               ],
               "confidence": "confirmed",
-              "source": "build.py exige llvm-mc via WSL ou Linux (Leonida/CONTRIBUTING.md)"
+              "source": "build.py requires llvm-mc via WSL or Linux (Leonida/CONTRIBUTING.md)"
             }
           ],
           "suggested": [
@@ -308,7 +308,7 @@ export const SEED = {
               "kind": "gpu",
               "value": "physical",
               "confidence": "confirmed",
-              "source": "check.py roda os testes na GPU (Leonida/CONTRIBUTING.md)"
+              "source": "check.py runs the tests on the GPU (Leonida/CONTRIBUTING.md)"
             }
           ],
           "optional": [
@@ -316,13 +316,13 @@ export const SEED = {
               "kind": "gpu",
               "value": "amd",
               "confidence": "confirmed",
-              "source": "wave64 só é exato em AMD (Leonida/README.md linha 44)"
+              "source": "wave64 is only exact on AMD (Leonida/README.md line 44)"
             },
             {
               "kind": "game_files",
               "value": "yes",
               "confidence": "confirmed",
-              "source": "evidência por contagem no corpus exige shaders.rpf"
+              "source": "corpus-count evidence requires shaders.rpf"
             }
           ],
           "suggested": []
@@ -330,17 +330,17 @@ export const SEED = {
       },
       "acceptance": [
         {
-          "text": "Regra na tabela de contrato de docs/design.md com a forma de confirmação.",
+          "text": "Rule in the contract table of docs/design.md with its form of confirmation.",
           "source": "Leonida/CONTRIBUTING.md",
           "confidence": "confirmed"
         },
         {
-          "text": "Fixture .asm escrita à mão com as palavras de saída esperadas; python -m unittest discover -s tests/semantic -v passa.",
+          "text": "Hand-written .asm fixture with the expected output words; python -m unittest discover -s tests/semantic -v passes.",
           "source": "Leonida/CONTRIBUTING.md",
           "confidence": "confirmed"
         },
         {
-          "text": "PR informa GPU e driver e declara uso de IA; sem skip-list.",
+          "text": "PR states GPU and driver and declares AI use; no skip-list.",
           "source": "Leonida/AGENTS.md",
           "confidence": "confirmed"
         }
@@ -359,7 +359,7 @@ export const SEED = {
         }
       ],
       "restrictions": [
-        "Sem shaders do jogo em nenhuma forma (Leonida/AGENTS.md)"
+        "No game shaders in any form (Leonida/AGENTS.md)"
       ]
     },
     {
@@ -368,7 +368,7 @@ export const SEED = {
       "fork_repo": "gta6-forks/Leonida",
       "github_kind": "issue",
       "url": "https://github.com/ItsNotRexed/Leonida/issues/29",
-      "title": "Atualizar o pin do rpf9-explorer após a recuperação de layouts de modelo",
+      "title": "Update the rpf9-explorer pin after the model layout recovery",
       "kind": "issue",
       "parent": null,
       "type": "operational",
@@ -382,7 +382,7 @@ export const SEED = {
       "depends_on": [
         "breadbbbb/rpf9-explorer#1"
       ],
-      "instructions_md": "# Issue #29\n\nDepois do merge de breadbbbb/rpf9-explorer#1: atualizar o submódulo `third_party/rpf9-explorer`, verificar o export de modelos com o pin novo e atualizar o status no README.",
+      "instructions_md": "# Issue #29\n\nAfter breadbbbb/rpf9-explorer#1 is merged: update the `third_party/rpf9-explorer` submodule, verify model export with the new pin and update the status in the README.",
       "requirements": {
         "implementation": {
           "required": [
@@ -396,7 +396,7 @@ export const SEED = {
               "kind": "game_files",
               "value": "no",
               "confidence": "inferred",
-              "source": "trocar pin e README não lê arquivos do jogo"
+              "source": "changing the pin and README does not read game files"
             }
           ],
           "optional": [],
@@ -407,7 +407,7 @@ export const SEED = {
                 "windows"
               ],
               "confidence": "inferred",
-              "source": "make_game.py é Windows first (Leonida/AGENTS.md)"
+              "source": "make_game.py is Windows-first (Leonida/AGENTS.md)"
             }
           ]
         },
@@ -417,7 +417,7 @@ export const SEED = {
               "kind": "game_files",
               "value": "yes",
               "confidence": "confirmed",
-              "source": "issue #29: verificar o export de modelos com o pin novo"
+              "source": "issue #29: verify model export with the new pin"
             }
           ],
           "optional": [],
@@ -435,12 +435,12 @@ export const SEED = {
       },
       "acceptance": [
         {
-          "text": "Pin de third_party/rpf9-explorer atualizado, export verificado, status do README atualizado.",
+          "text": "third_party/rpf9-explorer pin updated, export verified, README status updated.",
           "source": "issue #29",
           "confidence": "confirmed"
         },
         {
-          "text": "Métrica numérica de verificação.",
+          "text": "Numeric verification metric.",
           "source": "issue #29",
           "confidence": "unspecified"
         }
@@ -457,7 +457,7 @@ export const SEED = {
         }
       ],
       "restrictions": [
-        "Nenhum asset exportado no PR"
+        "No exported assets in the PR"
       ]
     },
     {
@@ -466,7 +466,7 @@ export const SEED = {
       "fork_repo": "gta6-forks/ScarlettX",
       "github_kind": null,
       "url": null,
-      "title": "Agrupamento: os 3 testes que falham no ScarlettX",
+      "title": "Grouping: the 3 failing tests in ScarlettX",
       "kind": "group",
       "parent": null,
       "type": "operational",
@@ -478,7 +478,7 @@ export const SEED = {
       "state": "open",
       "milestone": "M1-entrada",
       "depends_on": [],
-      "instructions_md": "Issue pai de agrupamento (não executável). README: \"Tests: 20/23 passing (failing: test_d3d12_guest_texture, test_boot_hello_scarlett, test_boot_rt_showcase)\".",
+      "instructions_md": "Grouping parent issue (not executable). README: \"Tests: 20/23 passing (failing: test_d3d12_guest_texture, test_boot_hello_scarlett, test_boot_rt_showcase)\".",
       "requirements": {
         "implementation": {
           "required": [],
@@ -493,7 +493,7 @@ export const SEED = {
       },
       "acceptance": [
         {
-          "text": "Todas as subissues concluídas.",
+          "text": "All subissues completed.",
           "source": "coordinator",
           "confidence": "confirmed"
         }
@@ -514,7 +514,7 @@ export const SEED = {
       "fork_repo": "gta6-forks/ScarlettX",
       "github_kind": null,
       "url": null,
-      "title": "Upload de textura do guest atrasado um frame (test_d3d12_guest_texture)",
+      "title": "Guest texture upload is one frame late (test_d3d12_guest_texture)",
       "kind": "subissue",
       "parent": "draft:Freminet/ScarlettX/failing-tests",
       "type": "operational",
@@ -526,7 +526,7 @@ export const SEED = {
       "state": "open",
       "milestone": "M1-entrada",
       "depends_on": [],
-      "instructions_md": "Texels que o título escreve no endereço da textura sobem uma vez por frame apresentado, antes do primeiro submit; uma escrita posterior chega um frame atrasada. O teste reescreve a textura e espera que o próximo submit veja o dado novo.",
+      "instructions_md": "Texels the title writes to the texture address are uploaded once per presented frame, before the first submit; a later write arrives one frame late. The test rewrites the texture and expects the next submit to see the new data.",
       "requirements": {
         "implementation": {
           "required": [
@@ -540,7 +540,7 @@ export const SEED = {
             },
             {
               "kind": "tool",
-              "value": "CMake 3.20+, Ninja, C++20 (MinGW-w64 GCC 13+ ou MSVC 2022)",
+              "value": "CMake 3.20+, Ninja, C++20 (MinGW-w64 GCC 13+ or MSVC 2022)",
               "confidence": "confirmed",
               "source": "ScarlettX/README.md#building--running-tests"
             },
@@ -548,7 +548,7 @@ export const SEED = {
               "kind": "game_files",
               "value": "no",
               "confidence": "confirmed",
-              "source": "ScarlettX/README.md: testes usam títulos sintéticos"
+              "source": "ScarlettX/README.md: tests use synthetic titles"
             }
           ],
           "optional": [],
@@ -557,7 +557,7 @@ export const SEED = {
               "kind": "gpu",
               "value": "none",
               "confidence": "inferred",
-              "source": "requisitos citam D3D12 runtime + WARP"
+              "source": "requirements list D3D12 runtime + WARP"
             }
           ]
         },
@@ -584,17 +584,17 @@ export const SEED = {
       },
       "acceptance": [
         {
-          "text": "test_d3d12_guest_texture passa em ctest --test-dir build --output-on-failure.",
-          "source": "ScarlettX/README.md linha 86",
+          "text": "test_d3d12_guest_texture passes in ctest --test-dir build --output-on-failure.",
+          "source": "ScarlettX/README.md line 86",
           "confidence": "confirmed"
         },
         {
-          "text": "Os demais testes continuam passando.",
+          "text": "The other tests keep passing.",
           "source": "coordinator",
           "confidence": "inferred"
         },
         {
-          "text": "Status regenerado com python tools/generate_status.py --build-dir <build>.",
+          "text": "Status regenerated with python tools/generate_status.py --build-dir <build>.",
           "source": "ScarlettX/README.md#status",
           "confidence": "confirmed"
         }
@@ -618,7 +618,7 @@ export const SEED = {
       "fork_repo": "gta6-forks/ScarlettX",
       "github_kind": null,
       "url": null,
-      "title": "Boot em processo filho carrega a xgameruntime.dll do System32",
+      "title": "Child-process boot loads xgameruntime.dll from System32",
       "kind": "subissue",
       "parent": "draft:Freminet/ScarlettX/failing-tests",
       "type": "operational",
@@ -630,7 +630,7 @@ export const SEED = {
       "state": "open",
       "milestone": "M1-entrada",
       "depends_on": [],
-      "instructions_md": "Sem `--in-process`, o guest acha os shims só via PATH. Com `C:\\Windows\\System32\\xgameruntime.dll` presente, essa cópia é carregada primeiro e os títulos sintéticos saem com 0xC0000139 (`test_boot_hello_scarlett`, `test_boot_rt_showcase`). Eles bootam com os shims ao lado do executável.",
+      "instructions_md": "Without `--in-process`, the guest finds the shims only via PATH. With `C:\\Windows\\System32\\xgameruntime.dll` present, that copy is loaded first and the synthetic titles exit with 0xC0000139 (`test_boot_hello_scarlett`, `test_boot_rt_showcase`). They boot with the shims next to the executable.",
       "requirements": {
         "implementation": {
           "required": [
@@ -640,11 +640,11 @@ export const SEED = {
                 "windows"
               ],
               "confidence": "confirmed",
-              "source": "ScarlettX/README.md linha 87 (observado no Windows 11 build 26100)"
+              "source": "ScarlettX/README.md line 87 (observed on Windows 11 build 26100)"
             },
             {
               "kind": "tool",
-              "value": "CMake 3.20+, Ninja, C++20 (MinGW-w64 GCC 13+ ou MSVC 2022)",
+              "value": "CMake 3.20+, Ninja, C++20 (MinGW-w64 GCC 13+ or MSVC 2022)",
               "confidence": "confirmed",
               "source": "ScarlettX/README.md"
             },
@@ -666,13 +666,13 @@ export const SEED = {
                 "windows"
               ],
               "confidence": "confirmed",
-              "source": "ScarlettX/README.md linha 87"
+              "source": "ScarlettX/README.md line 87"
             },
             {
               "kind": "hardware",
-              "value": "Máquina com C:\\Windows\\System32\\xgameruntime.dll presente",
+              "value": "Machine with C:\\Windows\\System32\\xgameruntime.dll present",
               "confidence": "confirmed",
-              "source": "ScarlettX/README.md linha 87"
+              "source": "ScarlettX/README.md line 87"
             }
           ],
           "optional": [],
@@ -681,12 +681,12 @@ export const SEED = {
       },
       "acceptance": [
         {
-          "text": "test_boot_hello_scarlett e test_boot_rt_showcase passam numa máquina com a DLL no System32.",
-          "source": "ScarlettX/README.md linha 87",
+          "text": "test_boot_hello_scarlett and test_boot_rt_showcase pass on a machine with the DLL in System32.",
+          "source": "ScarlettX/README.md line 87",
           "confidence": "confirmed"
         },
         {
-          "text": "Abordagem preferida (ordem de busca de DLL vs. copiar shims).",
+          "text": "Preferred approach (DLL search order vs. copying shims).",
           "source": "ScarlettX/README.md",
           "confidence": "unspecified"
         }
@@ -710,7 +710,7 @@ export const SEED = {
       "fork_repo": "gta6-forks/rpf9-explorer",
       "github_kind": "pull_request",
       "url": "https://github.com/breadbbbb/rpf9-explorer/pull/1",
-      "title": "Validar o PR #1 (recuperação de modelos com vértices empacotados e blocos mistos)",
+      "title": "Validate PR #1 (model recovery with packed vertices and mixed blocks)",
       "kind": "issue",
       "parent": null,
       "type": "operational",
@@ -722,7 +722,7 @@ export const SEED = {
       "state": "open",
       "milestone": "M3-assets",
       "depends_on": [],
-      "instructions_md": "# Validar breadbbbb/rpf9-explorer#1\n\nO PR corrige 169 candidatos rejeitados (167 de levels.rpf, 2 de story000.rpf) e adiciona `Tests/ModelRecoverySmoke`.\n\n1. Faça checkout do PR.\n2. Rode `dotnet run --project Tests/ModelRecoverySmoke -c Release` (fixture sem assets).\n3. Faça os builds Release do viewer, do IndexBuilder e do rpf9dump do Leonida contra o Core corrigido.\n4. Escreva o relatório (Markdown) com comandos, saídas e ambiente; publique-o como PR de conhecimento ou comentário de revisão.",
+      "instructions_md": "# Validate breadbbbb/rpf9-explorer#1\n\nThe PR fixes 169 rejected candidates (167 from levels.rpf, 2 from story000.rpf) and adds `Tests/ModelRecoverySmoke`.\n\n1. Check out the PR.\n2. Run `dotnet run --project Tests/ModelRecoverySmoke -c Release` (asset-free fixture).\n3. Do Release builds of the viewer, IndexBuilder and Leonida's rpf9dump against the fixed Core.\n4. Write the report (Markdown) with commands, outputs and environment; publish it as a knowledge PR or a review comment.",
       "requirements": {
         "implementation": {
           "required": [
@@ -742,7 +742,7 @@ export const SEED = {
               "kind": "game_files",
               "value": "no",
               "confidence": "confirmed",
-              "source": "PR #1: smoke fixture é asset-free"
+              "source": "PR #1: the smoke fixture is asset-free"
             }
           ],
           "optional": [
@@ -750,7 +750,7 @@ export const SEED = {
               "kind": "game_files",
               "value": "yes",
               "confidence": "confirmed",
-              "source": "PR #1: reproduzir 190.792/190.792 exige os 10 arquivos RPF9"
+              "source": "PR #1: reproducing 190.792/190.792 requires the 10 RPF9 files"
             }
           ],
           "suggested": [
@@ -760,7 +760,7 @@ export const SEED = {
                 "windows"
               ],
               "confidence": "inferred",
-              "source": "autor verificou no Windows 11 x64; viewer é WPF"
+              "source": "author verified on Windows 11 x64; the viewer is WPF"
             }
           ]
         },
@@ -768,7 +768,7 @@ export const SEED = {
           "required": [
             {
               "kind": "tool",
-              "value": ".NET 10 e .NET 8 SDK",
+              "value": ".NET 10 and .NET 8 SDK",
               "confidence": "confirmed",
               "source": "PR #1"
             }
@@ -788,18 +788,18 @@ export const SEED = {
       },
       "acceptance": [
         {
-          "text": "Smoke fixture passa (descoberta, blocos mistos, triângulos empacotados, cache v1/v2, readback byte a byte, rejeições negativas).",
+          "text": "Smoke fixture passes (discovery, mixed blocks, packed triangles, cache v1/v2, byte-for-byte readback, negative rejections).",
           "source": "PR #1 Verification",
           "confidence": "confirmed"
         },
         {
-          "text": "Builds Release do viewer, IndexBuilder e rpf9dump passam.",
+          "text": "Release builds of the viewer, IndexBuilder and rpf9dump pass.",
           "source": "PR #1 Verification",
           "confidence": "confirmed"
         },
         {
-          "text": "Critério de merge do mantenedor.",
-          "source": "rpf9-explorer não tem CONTRIBUTING",
+          "text": "Maintainer's merge criterion.",
+          "source": "rpf9-explorer has no CONTRIBUTING",
           "confidence": "unspecified"
         }
       ],
@@ -815,7 +815,7 @@ export const SEED = {
         }
       ],
       "restrictions": [
-        "Não anexar modelos/texturas extraídos"
+        "Do not attach extracted models/textures"
       ]
     },
     {
@@ -824,7 +824,7 @@ export const SEED = {
       "fork_repo": "gta6-forks/rpf9-explorer",
       "github_kind": null,
       "url": null,
-      "title": "Decodificador BCPack do Xbox",
+      "title": "Xbox BCPack decoder",
       "kind": "issue",
       "parent": null,
       "type": "operational",
@@ -836,7 +836,7 @@ export const SEED = {
       "state": "open",
       "milestone": "M3-assets",
       "depends_on": [],
-      "instructions_md": "rpf9-explorer README: \"Xbox BCPack decoding is unavailable.\" O Leonida também pula entradas BCPack dos pools. O Xbox2Windows tem testes sintéticos de BCPack (`bcpack_prefix_and_mip_tail`) que podem servir de referência sem o jogo.",
+      "instructions_md": "rpf9-explorer README: \"Xbox BCPack decoding is unavailable.\" Leonida also skips BCPack entries in the pools. Xbox2Windows has synthetic BCPack tests (`bcpack_prefix_and_mip_tail`) that can serve as a reference without the game.",
       "requirements": {
         "implementation": {
           "required": [
@@ -854,19 +854,19 @@ export const SEED = {
                 "windows"
               ],
               "confidence": "confirmed",
-              "source": "build do app é Windows (rpf9-explorer/README.md)"
+              "source": "the app build is Windows (rpf9-explorer/README.md)"
             }
           ],
           "suggested": [
             {
               "kind": "tool",
-              "value": "Ghidra ou IDA (análise do decodificador)",
+              "value": "Ghidra or IDA (decoder analysis)",
               "confidence": "confirmed",
-              "source": "decisão do usuário 2026-11-21 (não citado pelas fontes upstream)"
+              "source": "user decision 2026-11-21 (not cited by upstream sources)"
             },
             {
               "kind": "skill",
-              "value": "Fixtures BCPack do Xbox2Windows como referência",
+              "value": "Xbox2Windows BCPack fixtures as reference",
               "confidence": "inferred",
               "source": "Xbox2Windows/README.md#choose-an-experiment"
             }
@@ -878,7 +878,7 @@ export const SEED = {
               "kind": "game_files",
               "value": "unknown",
               "confidence": "unspecified",
-              "source": "validar contra texturas reais não é especificado"
+              "source": "validating against real textures is not specified"
             }
           ],
           "optional": [],
@@ -887,7 +887,7 @@ export const SEED = {
       },
       "acceptance": [
         {
-          "text": "Nenhuma fonte define o critério.",
+          "text": "No source defines the criterion.",
           "source": "rpf9-explorer/README.md",
           "confidence": "unspecified"
         }
@@ -906,7 +906,7 @@ export const SEED = {
         }
       ],
       "restrictions": [
-        "Análise só de binários que o participante tem legitimamente; nada de descriptografia ou contorno de proteção"
+        "Analysis only of binaries the participant legitimately owns; no decryption or protection circumvention"
       ]
     },
     {
@@ -915,7 +915,7 @@ export const SEED = {
       "fork_repo": "gta6-forks/americas-recomp",
       "github_kind": null,
       "url": null,
-      "title": "Medir o arredondamento fp16 dos interpolantes (aposentar XBOX_ALLOW_UNMEASURED_F16_INTERP)",
+      "title": "Measure fp16 rounding of interpolants (retire XBOX_ALLOW_UNMEASURED_F16_INTERP)",
       "kind": "issue",
       "parent": null,
       "type": "operational",
@@ -927,7 +927,7 @@ export const SEED = {
       "state": "open",
       "milestone": "M2-shaders",
       "depends_on": [],
-      "instructions_md": "README (xbox-series), *Pixel (strict)*: a maioria das falhas lê interpolante de 16 bits, recusado porque o Xbox usa round-toward-zero e \"there is no measured model\". *Assumptions*, item 3: `XBOX_ALLOW_UNMEASURED_F16_INTERP`.",
+      "instructions_md": "README (xbox-series), *Pixel (strict)*: most failures read a 16-bit interpolant, refused because the Xbox uses round-toward-zero and \"there is no measured model\". *Assumptions*, item 3: `XBOX_ALLOW_UNMEASURED_F16_INTERP`.",
       "requirements": {
         "implementation": {
           "required": [
@@ -935,11 +935,11 @@ export const SEED = {
               "kind": "gpu",
               "value": "amd",
               "confidence": "confirmed",
-              "source": "docs/dev/HW_ORACLE.md (driver AMD, HIP/comgr ou HSA)"
+              "source": "docs/dev/HW_ORACLE.md (AMD driver, HIP/comgr or HSA)"
             },
             {
               "kind": "tool",
-              "value": "Hardware oracle (oracle_hip.py no Windows, oracle.c/HSA no Linux)",
+              "value": "Hardware oracle (oracle_hip.py on Windows, oracle.c/HSA on Linux)",
               "confidence": "confirmed",
               "source": "docs/dev/HW_ORACLE.md"
             },
@@ -947,7 +947,7 @@ export const SEED = {
               "kind": "game_files",
               "value": "no",
               "confidence": "inferred",
-              "source": "medir o arredondamento não usa o corpus"
+              "source": "measuring the rounding does not use the corpus"
             }
           ],
           "optional": [
@@ -970,9 +970,9 @@ export const SEED = {
           "suggested": [
             {
               "kind": "hardware",
-              "value": "Se medir em RDNA2 de PC representa o Xbox",
+              "value": "Whether measuring on PC RDNA2 represents the Xbox",
               "confidence": "unspecified",
-              "source": "HW_ORACLE.md: gfx1013 não medido"
+              "source": "HW_ORACLE.md: gfx1013 not measured"
             }
           ]
         },
@@ -982,7 +982,7 @@ export const SEED = {
               "kind": "gpu",
               "value": "amd",
               "confidence": "confirmed",
-              "source": "CONTRIBUTING.md: revisores checam semântica em hardware"
+              "source": "CONTRIBUTING.md: reviewers check semantics on hardware"
             }
           ],
           "optional": [
@@ -990,7 +990,7 @@ export const SEED = {
               "kind": "game_files",
               "value": "yes",
               "confidence": "confirmed",
-              "source": "reportar ganho no corpus de pixel shaders exige shaders.rpf"
+              "source": "reporting the gain on the pixel shader corpus requires shaders.rpf"
             }
           ],
           "suggested": []
@@ -998,17 +998,17 @@ export const SEED = {
       },
       "acceptance": [
         {
-          "text": "Semântica citando a fonte (hardware: GPU e o que foi checado; ou ISA/LLVM/ACO/Mesa); não verificado vai para a dívida técnica.",
+          "text": "Semantics citing the source (hardware: GPU and what was checked; or ISA/LLVM/ACO/Mesa); anything unverified goes to technical debt.",
           "source": "americas-recomp/CONTRIBUTING.md",
           "confidence": "confirmed"
         },
         {
-          "text": "PR com linhas GPUs tested e AI-assisted preenchidas.",
+          "text": "PR with the GPUs tested and AI-assisted lines filled in.",
           "source": "americas-recomp/AGENTS.md",
           "confidence": "confirmed"
         },
         {
-          "text": "Substituir o opt-in por um modelo medido.",
+          "text": "Replace the opt-in with a measured model.",
           "source": "coordinator",
           "confidence": "inferred"
         }
@@ -1039,7 +1039,7 @@ export const SEED = {
       "fork_repo": "gta6-forks/americas-recomp",
       "github_kind": null,
       "url": null,
-      "title": "Completar o stand-in de xgameruntime.dll (48 de 398 métodos)",
+      "title": "Complete the xgameruntime.dll stand-in (48 of 398 methods)",
       "kind": "issue",
       "parent": null,
       "type": "operational",
@@ -1051,7 +1051,7 @@ export const SEED = {
       "state": "open",
       "milestone": "M4-runtime",
       "depends_on": [],
-      "instructions_md": "README (xbox-series), *What is built*: `tools/xbox/platform/xgr`, \"48 of 398 methods implemented (threading, async, offline user, system); the rest log and fail\". Deve ser dividido em subissues por grupo de métodos antes de virar executável.",
+      "instructions_md": "README (xbox-series), *What is built*: `tools/xbox/platform/xgr`, \"48 of 398 methods implemented (threading, async, offline user, system); the rest log and fail\". Must be split into subissues by method group before it becomes executable.",
       "requirements": {
         "implementation": {
           "required": [
@@ -1061,20 +1061,20 @@ export const SEED = {
                 "windows"
               ],
               "confidence": "inferred",
-              "source": "stand-in de DLL Windows"
+              "source": "Windows DLL stand-in"
             },
             {
               "kind": "game_files",
               "value": "no",
               "confidence": "inferred",
-              "source": "implementar não exige o jogo"
+              "source": "implementing does not require the game"
             }
           ],
           "optional": [],
           "suggested": [
             {
               "kind": "skill",
-              "value": "Comparar com o xgameruntime do ScarlettX (XTaskQueue, XAsync, XUser, XSystem)",
+              "value": "Compare with ScarlettX's xgameruntime (XTaskQueue, XAsync, XUser, XSystem)",
               "confidence": "inferred",
               "source": "ScarlettX/README.md"
             }
@@ -1087,7 +1087,7 @@ export const SEED = {
               "kind": "game_files",
               "value": "yes",
               "confidence": "confirmed",
-              "source": "README: uso real só quando o executável estiver disponível"
+              "source": "README: real use only when the executable is available"
             }
           ],
           "suggested": []
@@ -1095,17 +1095,17 @@ export const SEED = {
       },
       "acceptance": [
         {
-          "text": "Método não implementado falha; nunca devolver sucesso inventado; comportamento geral, não o de um título.",
+          "text": "An unimplemented method fails; never return fabricated success; general behavior, not that of one title.",
           "source": "americas-recomp/AGENTS.md",
           "confidence": "confirmed"
         },
         {
-          "text": "Conventional Commits, sem comentários no código, check_conventions.py, template de PR completo.",
+          "text": "Conventional Commits, no code comments, check_conventions.py, complete PR template.",
           "source": "americas-recomp/AGENTS.md",
           "confidence": "confirmed"
         },
         {
-          "text": "Se as regras do AnyPS5 valem integralmente para tools/xbox.",
+          "text": "Whether the AnyPS5 rules fully apply to tools/xbox.",
           "source": "americas-recomp/CONTRIBUTING.md",
           "confidence": "unspecified"
         }
@@ -1129,7 +1129,7 @@ export const SEED = {
       "fork_repo": null,
       "github_kind": null,
       "url": null,
-      "title": "Planejamento inicial: transformar os rascunhos em issues e definir critérios pendentes",
+      "title": "Initial planning: turn the drafts into issues and define pending criteria",
       "kind": "issue",
       "parent": null,
       "type": "strategic",
@@ -1141,7 +1141,7 @@ export const SEED = {
       "state": "open",
       "milestone": "M1-entrada",
       "depends_on": [],
-      "instructions_md": "# Planejamento inicial\n\n1. `get_planning_context`.\n2. Para cada `draft:*`, proponha `create_issue` com `replaces_draft` (no fork técnico, quando existir) ou mantenha como rascunho com justificativa.\n3. Defina critério de aceitação para `R0Y00/Xbox2Windows#126` (hoje `needs_info`).\n4. Divida `draft:realdody/americas-recomp/xgameruntime-standin` em subissues sob um agrupamento.\n5. `validate_planning_proposal` e abra o PR de planejamento no repositório coordenador.",
+      "instructions_md": "# Initial planning\n\n1. `get_planning_context`.\n2. For each `draft:*`, propose `create_issue` with `replaces_draft` (in the technical fork, when one exists) or keep it as a draft with a justification.\n3. Define the acceptance criterion for `R0Y00/Xbox2Windows#126` (currently `needs_info`).\n4. Split `draft:realdody/americas-recomp/xgameruntime-standin` into subissues under a grouping.\n5. `validate_planning_proposal` and open the planning PR in the coordinator repository.",
       "requirements": {
         "implementation": {
           "required": [],
@@ -1156,7 +1156,7 @@ export const SEED = {
       },
       "acceptance": [
         {
-          "text": "Proposta válida segundo schemas/planning-proposal.schema.json, aberta como PR no repositório coordenador.",
+          "text": "Valid proposal according to schemas/planning-proposal.schema.json, opened as a PR in the coordinator repository.",
           "source": "docs/SPEC.md",
           "confidence": "confirmed"
         }
@@ -1177,32 +1177,32 @@ export const SEED = {
     "objective": {
       "id": "objective",
       "protected": true,
-      "text_md": "Evoluir, de forma aberta e legal, as ferramentas de pesquisa e interoperabilidade dos cinco projetos (Leonida, Xbox2Windows, ScarlettX, rpf9-explorer, americas-recomp), sem distribuir builds, assets, chaves ou qualquer conteúdo proprietário. Mudanças neste objetivo exigem autorização humana do proprietário."
+      "text_md": "Openly and legally evolve the research and interoperability tools of the five projects (Leonida, Xbox2Windows, ScarlettX, rpf9-explorer, americas-recomp), without distributing builds, assets, keys or any proprietary content. Changes to this objective require human authorization from the owner."
     },
     "milestones": [
       {
         "id": "objective",
-        "title": "Objetivo final",
+        "title": "Final objective",
         "protected": true
       },
       {
         "id": "M1-entrada",
-        "title": "Primeiras contribuições sem o jogo (PE loader, testes do ScarlettX, planejamento inicial)",
+        "title": "First contributions without the game (PE loader, ScarlettX tests, initial planning)",
         "protected": false
       },
       {
         "id": "M2-shaders",
-        "title": "Semântica de shaders (system values, fp16) com evidência de hardware",
+        "title": "Shader semantics (system values, fp16) with hardware evidence",
         "protected": false
       },
       {
         "id": "M3-assets",
-        "title": "Modelos e texturas (pin do rpf9-explorer, BCPack)",
+        "title": "Models and textures (rpf9-explorer pin, BCPack)",
         "protected": false
       },
       {
         "id": "M4-runtime",
-        "title": "Runtime GDK (xgameruntime, D3D12 do Xbox)",
+        "title": "GDK runtime (xgameruntime, Xbox D3D12)",
         "protected": false
       }
     ],

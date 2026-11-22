@@ -42,8 +42,8 @@ test('no secrets are committed in config; placeholders are explicit', () => {
 test('landing page explains MCP connection, one-at-a-time and continuous mode, without third-party scripts', () => {
   const html = readFileSync(join(root, 'public/index.html'), 'utf8');
   assert.match(html, /claude mcp add --transport http/);
-  assert.match(html, /Uma tarefa por vez/);
-  assert.match(html, /Modo contínuo/);
+  assert.match(html, /One task at a time/);
+  assert.match(html, /Continuous mode/);
   assert.doesNotMatch(html, /<script[^>]+src="https?:/);
   assert.doesNotMatch(html, /style="/);
   const onboarding = readFileSync(join(root, 'public/onboarding.html'), 'utf8');

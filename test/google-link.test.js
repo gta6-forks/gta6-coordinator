@@ -39,10 +39,19 @@ test('link codes expire, need verified claims, and never hijack an existing Goog
   await assert.rejects(linkGoogle(ctx, l1.code, claims(2)), /expired/);
   const l2 = await createGoogleLink(ctx, a.participant);
   await assert.rejects(linkGoogle(ctx, l2.code, { ...claims(2), email_verified: false }), /verified/);
-  await loginGoogle(ctx, { sub: 'taken-sub', email_verified: true, name: 'Existing' });
-  await assert.rejects(linkGoogle(ctx, l2.code, { sub: 'taken-sub', email_verified: true }), (e) => e.code === 'google_account_in_use');
-  const fresh = await anon(ctx);
-  assert.equal((await call(ctx, fresh.token, 'whoami')).result.structuredContent.participant.kind, 'anonymous', 'refused link leaves the key anonymous');
+  const existing = await loginGoogle(ctx, { sub: 'taken-sub', email_verified: true, name: 'Existing' });
+  // A fresh key for a Google account that already has a participant: the key is attached to that participant.
+  const attached = await linkGoogle(ctx, l2.code, { sub: 'taken-sub', email_verified: true });
+  assert.equal(attached.id, existing.participant.id);
+  const who = (await call(ctx, a.token, 'whoami')).result.structuredContent;
+  assert.equal(who.participant.id, existing.participant.id, 'new key now signs in as the existing Google participant');
+  assert.equal(who.participant.kind, 'google');
+  // ...unless the anonymous key already has work of its own: then it is refused and stays anonymous.
+  const busy = await anon(ctx);
+  claim(ctx, busy.participant, {});
+  const l3 = await createGoogleLink(ctx, busy.participant);
+  await assert.rejects(linkGoogle(ctx, l3.code, { sub: 'taken-sub', email_verified: true }), (e) => e.code === 'google_account_in_use');
+  assert.equal((await call(ctx, busy.token, 'whoami')).result.structuredContent.participant.kind, 'anonymous');
   const g = await google(ctx);
   assert.equal(await createGoogleLink(ctx, g.participant), null, 'only anonymous participants get a link');
   await assert.rejects(linkGoogle(ctx, 'short', claims(3)), /invalid/);

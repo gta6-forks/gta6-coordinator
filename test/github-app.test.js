@@ -21,7 +21,7 @@ async function pkcs8Pem() {
 function fakeGitHub({ existing = new Set(), rateLimitOnce = false } = {}) {
   const calls = [];
   const repos = new Map();
-  const refs = new Map([['gta6-forks/Xbox2Windows:heads/main', 'f'.repeat(40)]]);
+  const refs = new Map([['gta6-forks/Xbox2Windows:heads/main', 'f'.repeat(40)], ['gta6-forks/gta6-coordinator:heads/main', 'e'.repeat(40)]]);
   let limited = rateLimitOnce;
   let tok = 0;
   const reply = (status, body, headers = {}) => new Response(body === undefined ? null : JSON.stringify(body), { status, headers });
@@ -48,14 +48,14 @@ function fakeGitHub({ existing = new Set(), rateLimitOnce = false } = {}) {
     if (m && method === 'PATCH') return reply(200, { archived: true });
     if (m && method === 'DELETE') return reply(204);
     if (/\/actions\/permissions$/.test(u.pathname)) return reply(204);
-    if (u.pathname === '/repos/gta6-forks/Xbox2Windows') return reply(200, { default_branch: 'main' });
+    if (/^\/repos\/gta6-forks\/[^/]+$/.test(u.pathname)) return reply(200, { default_branch: 'main' });
     const ref = /^\/repos\/(gta6-forks\/[^/]+)\/git\/ref\/(.+)$/.exec(u.pathname);
     if (ref) {
       const sha = refs.get(`${ref[1]}:${ref[2]}`);
       return sha ? reply(200, { object: { sha } }) : reply(404, {});
     }
     if (method === 'POST' && /\/git\/refs$/.test(u.pathname)) {
-      refs.set(`gta6-forks/Xbox2Windows:${body.ref.replace('refs/', '')}`, body.sha);
+      refs.set(`${u.pathname.split('/').slice(2, 4).join('/')}:${body.ref.replace('refs/', '')}`, body.sha);
       return reply(201, {});
     }
     if (method === 'POST' && u.pathname === '/repos/gta6/coordinator/dispatches') return reply(204);
@@ -162,6 +162,15 @@ test('the client refuses multi-repository write tokens and PKCS#1 keys', async (
 test('missing task fork: provisioning reports it instead of creating anything', async () => {
   const gh = fakeGitHub();
   const p = await provisioner(gh);
-  assert.equal((await p.provision({ workspace, task: { id: 'x', fork_repo: null } })).status, 'integration_repo_missing');
+  assert.equal((await p.provision({ workspace: { ...workspace, integration_repo: null }, task: { id: 'x', fork_repo: null } })).status, 'integration_repo_missing');
   assert.equal(gh.calls.length, 0);
+});
+
+test('planning tasks integrate into the coordinator repository', async () => {
+  const gh = fakeGitHub();
+  const p = await provisioner(gh);
+  const out = await p.provision({ workspace: { ...workspace, task_branch: 'task/plan-bootstrap', integration_repo: 'gta6-forks/gta6-coordinator' }, task: { id: 'local:plan/bootstrap-issues', fork_repo: null } });
+  assert.equal(out.status, 'seeding');
+  assert.equal(out.integration_repo, 'gta6-forks/gta6-coordinator');
+  assert.equal(out.base_sha, 'e'.repeat(40));
 });

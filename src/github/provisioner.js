@@ -83,7 +83,9 @@ export class GitHubAppProvisioner {
   }
 
   async provision({ workspace, task }) {
-    if (!task.fork_repo) return { status: 'integration_repo_missing' };
+    // Integration target: the task's main fork, or the coordinator repository for planning tasks.
+    const target = workspace.integration_repo || task.fork_repo;
+    if (!target) return { status: 'integration_repo_missing' };
     const name = repoName(workspace);
     const full = `${this.org}/${name}`;
     // 1) create the private work repository (creation token: write only on the empty anchor repo).
@@ -112,18 +114,18 @@ export class GitHubAppProvisioner {
     const admin = await this.#adminToken(name);
     await this.gh.request('PUT', `/repos/${full}/actions/permissions`, { token: admin, body: { enabled: false }, ok: [204] });
     // 3) make sure the task branch exists in the main fork (token: contents write on the fork only).
-    const { name: forkName } = split(task.fork_repo);
+    const { name: forkName } = split(target);
     const forkTok = (await this.gh.installationToken(this.forksInst, { repositories: [forkName], permissions: { contents: 'write' } })).token;
     let baseSha;
     try {
-      const { data } = await this.gh.request('GET', `/repos/${task.fork_repo}/git/ref/heads/${workspace.task_branch}`, { token: forkTok });
+      const { data } = await this.gh.request('GET', `/repos/${target}/git/ref/heads/${workspace.task_branch}`, { token: forkTok });
       baseSha = data.object.sha;
     } catch (err) {
       if (err.githubStatus !== 404) throw err;
-      const repo = (await this.gh.request('GET', `/repos/${task.fork_repo}`, { token: forkTok })).data;
-      const main = (await this.gh.request('GET', `/repos/${task.fork_repo}/git/ref/heads/${repo.default_branch}`, { token: forkTok })).data;
+      const repo = (await this.gh.request('GET', `/repos/${target}`, { token: forkTok })).data;
+      const main = (await this.gh.request('GET', `/repos/${target}/git/ref/heads/${repo.default_branch}`, { token: forkTok })).data;
       baseSha = main.object.sha;
-      await this.gh.request('POST', `/repos/${task.fork_repo}/git/refs`, {
+      await this.gh.request('POST', `/repos/${target}/git/refs`, {
         token: forkTok,
         body: { ref: `refs/heads/${workspace.task_branch}`, sha: baseSha },
         ok: [201, 422],
@@ -134,11 +136,11 @@ export class GitHubAppProvisioner {
     await this.#dispatch('seed-workspace', {
       workspace_id: workspace.id,
       workspace_repo: full,
-      integration_repo: task.fork_repo,
+      integration_repo: target,
       task_branch: workspace.task_branch,
       base_sha: baseSha,
     });
-    return { status: 'seeding', repo_full_name: full, integration_repo: task.fork_repo, task_branch: workspace.task_branch, base_sha: baseSha };
+    return { status: 'seeding', repo_full_name: full, integration_repo: target, task_branch: workspace.task_branch, base_sha: baseSha };
   }
 
   async mintCredential({ workspace }) {

@@ -56,7 +56,7 @@ function verifyTaskFor(review, target, slot) {
     fork_repo: d.fork_repo ?? null,
     github_kind: null,
     url: review.pr_url,
-    title: `Verificar ${target.id} @ ${short} (${slot}/2)`,
+    title: `Review ${target.id} @ ${short} (${slot}/2)`,
     kind: 'issue',
     parent: null,
     type: 'strategic',
@@ -69,16 +69,16 @@ function verifyTaskFor(review, target, slot) {
     milestone: d.milestone ?? null,
     depends_on: [],
     instructions_md: [
-      `# Verificação independente ${slot}/2`,
+      `# Independent review ${slot}/2`,
       '',
-      `- Tarefa: \`${target.id}\` — ${d.title}`,
+      `- Task: \`${target.id}\` — ${d.title}`,
       `- PR: ${review.pr_url}`,
-      `- Commit a verificar (exatamente este): \`${review.commit_sha}\``,
+      `- Commit to review (exactly this one): \`${review.commit_sha}\``,
       '',
-      'Faça checkout desse commit, rode os comandos de validação da tarefa e confira cada critério de aceitação.',
-      'Não use o relatório do executor como prova: reproduza. Reporte com `submit_verification`.',
+      'Check out that commit, run the task validation commands and check every acceptance criterion.',
+      'Do not take the executor report as proof: reproduce it. Report with `submit_verification`.',
       '',
-      '## Critérios de aceitação da tarefa original',
+      '## Acceptance criteria of the original task',
       ...d.acceptance.map((a) => `- [${a.confidence}] ${a.text}`),
     ].join('\n'),
     requirements: { implementation: structuredClone(d.requirements.validation), validation: structuredClone(d.requirements.validation) },
@@ -104,7 +104,7 @@ function replanTaskFor(review, target, feedback) {
     fork_repo: null,
     github_kind: null,
     url: review.pr_url,
-    title: `Replanejar ${target.id} após reprovação`,
+    title: `Re-plan ${target.id} after a failed review`,
     kind: 'issue',
     parent: null,
     type: 'strategic',
@@ -117,22 +117,22 @@ function replanTaskFor(review, target, feedback) {
     milestone: target.data.milestone ?? null,
     depends_on: [],
     instructions_md: [
-      `# Replanejamento de \`${target.id}\``,
+      `# Re-planning \`${target.id}\``,
       '',
-      `A entrega ${review.pr_url} (commit \`${review.commit_sha}\`) não foi aprovada.`,
+      `The delivery ${review.pr_url} (commit \`${review.commit_sha}\`) was not approved.`,
       '',
-      '## Feedback recebido',
+      '## Feedback',
       ...feedback.map((f) => `### ${f.from}\n\n${f.text}`),
       '',
-      'Use `get_planning_context`, escreva uma proposta (`validate_planning_proposal`) que ajuste, divida ou',
-      'substitua a tarefa, e abra o PR de planejamento no repositório coordenador.',
+      'Use `get_planning_context`, write a proposal (`validate_planning_proposal`) that adjusts, splits or',
+      'replaces the task, and open the planning PR in the coordinator repository.',
     ].join('\n'),
     requirements: {
       implementation: { required: [], optional: [], suggested: [] },
       validation: { required: [], optional: [], suggested: [] },
     },
     acceptance: [
-      { text: 'Proposta válida segundo schemas/planning-proposal.schema.json, aberta como PR no repositório coordenador.', source: 'docs/SPEC.md#planejamento', confidence: 'confirmed' },
+      { text: 'Proposal valid against schemas/planning-proposal.schema.json, opened as a PR in the coordinator repository.', source: 'docs/SPEC.md#planejamento', confidence: 'confirmed' },
     ],
     deliverables: ['planning_proposal'],
     sources: [{ kind: 'coordinator', ref: `review:${review.id}` }],
@@ -283,7 +283,7 @@ export async function submitVerification(ctx, participant, { reservation_id, ver
       ctx.store.exec("UPDATE tasks SET status = 'done', updated_at = ? WHERE id = ?", now, task.id);
       recordEvent(ctx.store, now, participant.id, 'verification.submitted', { review_id: reviewId, slot, verdict: verification.verdict });
       if (verification.verdict === 'reject') {
-        const planTask = rejectReview(ctx, review, [{ from: `Verificação ${slot}`, text: verification.feedback_md }]);
+        const planTask = rejectReview(ctx, review, [{ from: `Review ${slot}`, text: verification.feedback_md }]);
         return { status: 'changes_requested', review_id: reviewId, replan_task: planTask };
       }
       return { status: approveIfComplete(ctx, review), review_id: reviewId };

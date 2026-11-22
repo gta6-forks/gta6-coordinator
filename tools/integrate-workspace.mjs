@@ -114,7 +114,7 @@ async function main() {
   if (!pr) {
     const res = await api(`/repos/${p.integration_repo}/pulls`, {
       method: 'POST',
-      body: JSON.stringify({ title: `${p.issue}: integração do coordenador`, head: p.task_branch, base: p.base_branch ?? 'main', body: `Refs ${p.issue}\n\nIntegrado do repositório de trabalho do coordenador (commit ${p.head_sha}).` }),
+      body: JSON.stringify({ title: `${p.issue}: coordinator integration`, head: p.task_branch, base: p.base_branch ?? 'main', body: `Refs ${p.issue}\n\nIntegrated from the coordinator work repository (commit ${p.head_sha}).` }),
     });
     if (!res.ok) throw new Error(`create PR failed: ${res.status}`);
     pr = await res.json();
