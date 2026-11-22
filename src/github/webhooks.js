@@ -4,6 +4,7 @@
 import { AppError } from '../util.js';
 import { recordEvent } from '../store/store.js';
 import { markMerged } from '../services/review.js';
+import { getTask } from '../services/catalog.js';
 import { recordCommits } from '../services/metrics.js';
 
 async function hmacHex(secret, body) {
@@ -48,8 +49,9 @@ export async function handleGithubWebhook(ctx, headers, raw) {
   if (event === 'pull_request' && payload.action === 'closed' && payload.pull_request?.merged) {
     const prUrl = payload.pull_request.html_url;
     const head = payload.pull_request.head?.sha;
+    let merged;
     try {
-      return markMerged(ctx, { pr_url: prUrl, commit_sha: head });
+      merged = markMerged(ctx, { pr_url: prUrl, commit_sha: head });
     } catch (err) {
       if (err instanceof AppError && err.code === 'review_not_ready') {
         recordEvent(ctx.store, ctx.now(), 'github', 'github.merge_without_ready_review', { pr_url: prUrl, head });
@@ -57,6 +59,17 @@ export async function handleGithubWebhook(ctx, headers, raw) {
       }
       throw err;
     }
+    // An approved planning PR in the coordinator repository: apply it (issues in the forks + catalog).
+    const task = getTask(ctx.store, merged.task_id);
+    if (task?.data.role === 'plan' && payload.repository?.full_name === ctx.env.COORDINATOR_REPO && ctx.applyPlanning) {
+      try {
+        merged.planning = await ctx.applyPlanning({ number: payload.pull_request.number, url: prUrl });
+      } catch (err) {
+        recordEvent(ctx.store, ctx.now(), 'planner', 'planning.apply_failed', { pr: prUrl, message: String(err.message ?? err).slice(0, 300) });
+        merged.planning = { status: 'apply_failed', retry: 'POST /api/planning/apply' };
+      }
+    }
+    return merged;
   }
   if (event === 'push') {
     const repo = payload.repository?.full_name ?? '';

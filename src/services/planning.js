@@ -1,5 +1,5 @@
-// Planning proposals: validated here (MCP), again in the GitHub Action (tools/validate-planning.mjs),
-// and applied only by the Action after two verifications — never directly by the MCP.
+// Planning proposals: validated here (MCP), again in the GitHub Action (tools/validate-planning.mjs), and applied
+// by the Worker (services/planning-apply.js) only after the planning PR got two reviews and was merged.
 import { AppError, ISSUE_ID } from '../util.js';
 import { validate } from '../schema/validate.js';
 import { planningProposalSchema } from '../schema/schemas.js';

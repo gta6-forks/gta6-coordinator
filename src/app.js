@@ -8,7 +8,10 @@ import { publicCatalog, reservationPolicy } from './services/scheduler.js';
 import { markMerged, reportCi } from './services/review.js';
 import { handleRpc } from './mcp/server.js';
 import { PendingGitWriteAdapter } from './github/write-adapter.js';
-import { GitHubReadOnlySource, SeedSource } from './github/read-source.js';
+import { GitHubReadOnlySource } from './github/read-source.js';
+import { createPlanner } from './github/planner.js';
+import { applyOverrides, applyPlanningPr, getOverrides, managedRepos } from './services/planning-apply.js';
+import { recordEvent } from './store/store.js';
 import { SEED } from './generated/seed.js';
 import { createProvisioner, DisabledProvisioner } from './github/provisioner.js';
 import { authenticate } from './services/auth.js';
@@ -37,15 +40,8 @@ function timingSafeEqual(a, b) {
   return diff === 0;
 }
 
-export function taskSource(env) {
-  if (env.TASK_SOURCE === 'github') {
-    const repos = String(env.TASK_REPOS ?? '').split(',').map((s) => s.trim()).filter(Boolean);
-    return new GitHubReadOnlySource({ repos, readToken: env.GITHUB_READ_TOKEN ?? null, roadmap: SEED.roadmap });
-  }
-  return new SeedSource(SEED);
-}
 
-export function createApp({ store, env, now = () => Date.now(), gitWrite = new PendingGitWriteAdapter(), provisioner = null }) {
+export function createApp({ store, env, now = () => Date.now(), gitWrite = new PendingGitWriteAdapter(), provisioner = null, planner = undefined }) {
   let prov = provisioner;
   if (!prov) {
     try {
@@ -56,13 +52,39 @@ export function createApp({ store, env, now = () => Date.now(), gitWrite = new P
       prov.describe = () => ({ name: 'disabled', enabled: false, reason: `github-app provisioner misconfigured: ${err.message}` });
     }
   }
-  const ctx = { store, env, now, gitWrite, provisioner: prov };
+  const ctx = { store, env, now, gitWrite, provisioner: prov, planner: planner === undefined ? createPlanner(env) : planner };
   migrate(store);
 
-  async function sync() {
-    const source = taskSource(env);
-    return syncCatalog(ctx, await source.listTasks(), await source.getRoadmap());
+  // Catalog = seed (TASK_SOURCE seed | seed+github) + gta6-task issues of the main forks (github | seed+github),
+  // with the overrides written by applied planning proposals.
+  async function loadSourceTasks() {
+    const mode = env.TASK_SOURCE ?? 'seed';
+    const out = mode === 'github' ? [] : structuredClone(SEED.tasks);
+    if (mode === 'github' || mode === 'seed+github') {
+      const repos = managedRepos(env);
+      try {
+        const readToken = env.GITHUB_READ_TOKEN || (ctx.planner ? await ctx.planner.readToken(repos) : null);
+        out.push(...(await new GitHubReadOnlySource({ repos, readToken, roadmap: SEED.roadmap }).listTasks()));
+      } catch (err) {
+        recordEvent(store, now(), 'system', 'catalog.github_read_failed', { message: String(err.message ?? err).slice(0, 300) });
+        console.error('catalog_github_read_failed', String(err.message ?? err).slice(0, 300));
+      }
+    }
+    return out;
   }
+
+  async function sync() {
+    return syncCatalog(ctx, applyOverrides(await loadSourceTasks(), getOverrides(store)), SEED.roadmap);
+  }
+
+  /** Applies the proposal(s) of a merged planning PR, then refreshes the catalog. */
+  async function applyPlanning(pr) {
+    if (!ctx.planner) throw new AppError('planner_not_configured', 'GitHub App planner is not configured', 503);
+    const out = await applyPlanningPr(ctx, ctx.planner, pr);
+    out.sync = await sync();
+    return out;
+  }
+  ctx.applyPlanning = applyPlanning;
 
   async function ensureSeeded() {
     if (!store.one("SELECT 1 AS x FROM tasks WHERE origin = 'catalog' LIMIT 1")) await sync();
@@ -113,6 +135,16 @@ export function createApp({ store, env, now = () => Date.now(), gitWrite = new P
           throw new AppError('bad_credential_request', 'expected host=github.com and path=owner/repo(.git)', 400);
         }
         return json(await issueGitCredential(ctx, participant, { repo }));
+      }
+      if (pathname === '/api/planning/apply' && request.method === 'POST') {
+        // Manual retry for the owner/integrator (same shared secret as the integration callback).
+        if (!env.INTEGRATION_CALLBACK_SECRET || !timingSafeEqual(request.headers.get('x-coordinator-secret') ?? '', env.INTEGRATION_CALLBACK_SECRET)) {
+          throw new AppError('unauthorized', 'bad secret', 401);
+        }
+        const body = await readJson(request);
+        const n = Number(body.pr_number);
+        if (!Number.isInteger(n) || n < 1) throw new AppError('bad_request', 'pr_number required', 400);
+        return json(await applyPlanning({ number: n, url: `https://github.com/${env.COORDINATOR_REPO}/pull/${n}` }));
       }
       if (pathname === '/api/integration' && request.method === 'POST') {
         if (!env.INTEGRATION_CALLBACK_SECRET) throw new AppError('integration_not_configured', 'integration callback secret not configured', 503);

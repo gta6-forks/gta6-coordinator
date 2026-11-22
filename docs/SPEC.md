@@ -149,8 +149,16 @@ projetos técnicos abertos: **Leonida**, **Xbox2Windows**, **ScarlettX**, **rpf9
   rascunho só vira pronto via `create_issue`.
 - **D-PLAN-4** O objetivo final e marcos `protected` só mudam com autorização humana explícita
   (`requires_human_authorization`).
-- **D-PLAN-5** A Action nunca contorna proteções de branch. Enquanto P-3 não for implementado, `--apply` só reporta
-  `pending_decision`.
+- **D-PLAN-5** A Action nunca contorna proteções de branch e não aplica nada (`--apply` só reporta).
+- **D-PLAN-6** (2026-11-21, decisão do proprietário: caminho 1) Aplicação pelo Worker: quando o PR de planejamento no
+  repositório coordenador recebe merge depois das duas verificações (webhook `pull_request` merged), o Worker lê
+  `planning/proposals/*.json` no commit de merge, valida de novo contra o catálogo e aplica: `create_issue` vira issue
+  `gta6-task` no fork principal (marcador oculto por proposta/ref, idempotente); as demais operações editam o bloco
+  `gta6-task` da issue no fork ou gravam um *override* para tarefas do seed; `replaces_draft` fecha o rascunho e troca a
+  dependência dos dependentes. `roadmap_change`/`set_objective` só são registrados para o proprietário. Cada proposta é
+  aplicada no máximo uma vez. Catálogo = seed + issues `gta6-task` dos forks (`TASK_SOURCE=seed+github`). O App precisa
+  de **Issues (write)**; todo token de escrita continua cobrindo um único repositório. Repetição manual:
+  `POST /api/planning/apply` com o secret do integrador.
 
 ### GitHub e isolamento de escrita (decidido em 2026-11-21; detalhes em `docs/GITHUB_ISOLATION.md`)
 
@@ -211,7 +219,7 @@ projetos técnicos abertos: **Leonida**, **Xbox2Windows**, **ScarlettX**, **rpf9
 |---|---|---|---|
 | **P-1** | **Bloqueio externo**: criar a org de teste e o GitHub App (manifesto em `docs/github-app-manifest.json`) e rodar `tools/github-gate.mjs` | Provisionador implementado, desligado por config | `src/github/provisioner.js` |
 | **P-2** | Org de trabalho (nome, plano Free ou Team). Com Team, push rulesets viram a primeira barreira de conteúdo | `WORKSPACE_ORG` vazio | `wrangler.jsonc` |
-| **P-3** | Executor de merge na `main` depois da revisão (App com merge via API, merge queue, mantenedor humano) e aplicação de planejamento | Só registra merge intent; Action de planejamento não aplica | `src/github/write-adapter.js` |
+| **P-3** | Executor de merge na `main` depois da revisão (App com merge via API, merge queue, mantenedor humano) | Só registra merge intent; o merge é humano. A aplicação de planejamento foi decidida (D-PLAN-6) | `src/github/write-adapter.js` |
 | **P-4** | Registro do GitHub App (dono, permissões, webhook), guarda da chave privada | Não existe | `docs/DEPLOY.md` §7 |
 | **P-5** | Criação dos cinco forks principais e do repositório coordenador; nomes | `fork_repo: null`; `COORDINATOR_REPO` vazio | `seed/tasks.json`, `wrangler.jsonc` |
 | **P-6** | ~~Endpoints de subissues e dependências~~ **confirmados na API real em 2026-11-21** (`/sub_issues`, `/dependencies/blocked_by`, campos `parent_issue_url`, `issue_dependencies_summary`). Falta só publicar issues com o rótulo `gta6-task` nos forks | Fonte padrão é o seed | `src/github/read-source.js` |

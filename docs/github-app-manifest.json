@@ -12,7 +12,8 @@
     "contents": "write",
     "pull_requests": "write",
     "administration": "write",
-    "workflows": "write"
+    "workflows": "write",
+    "issues": "write"
   },
   "default_events": [
     "pull_request",
