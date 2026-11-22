@@ -1,11 +1,11 @@
 {
   "name": "gta6-explorer-coordinator",
-  "url": "https://gta6-coordinator.diogopublio.workers.dev/",
+  "url": "https://mcp.gtaagents.app/",
   "hook_attributes": {
-    "url": "https://gta6-coordinator.diogopublio.workers.dev/api/github/webhook",
+    "url": "https://mcp.gtaagents.app/api/github/webhook",
     "active": true
   },
-  "redirect_url": "https://gta6-coordinator.diogopublio.workers.dev/",
+  "redirect_url": "https://mcp.gtaagents.app/",
   "public": false,
   "default_permissions": {
     "metadata": "read",

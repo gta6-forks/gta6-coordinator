@@ -284,3 +284,20 @@ test('seeding: no credential until the trusted Action seeds the work repo with t
   const cred = await issueGitCredential(ctx, a.participant, { repo: ws.repo });
   assert.equal(cred.username, 'x-access-token');
 });
+
+test('get_workspace_remote: a 1h push URL for the caller\'s own ready work repo only, never after the reservation ends', async () => {
+  const { ctx, provisioner } = await world();
+  const a = await anon(ctx);
+  const b = await anon(ctx);
+  const r = claim(ctx, a.participant, {});
+  const ws = await getWorkspace(ctx, a.participant, { reservation_id: r.reservation.id });
+  const out = (await handleRpc(ctx, { jsonrpc: '2.0', id: 1, method: 'tools/call', params: { name: 'get_workspace_remote', arguments: { reservation_id: r.reservation.id } } }, `Bearer ${a.token}`)).result.structuredContent;
+  assert.match(out.push_url, new RegExp(`^https://x-access-token:ghs_fake_\\d+@github\\.com/${ws.repo}\\.git$`));
+  assert.ok(out.push_command.startsWith('git -c credential.helper= push '));
+  assert.deepEqual(provisioner.calls.filter((c) => c[0] === 'mint').map((c) => c[1]), [ws.repo], 'token minted for the work repo only');
+  const other = (await handleRpc(ctx, { jsonrpc: '2.0', id: 2, method: 'tools/call', params: { name: 'get_workspace_remote', arguments: { reservation_id: r.reservation.id } } }, `Bearer ${b.token}`)).result;
+  assert.equal(other.isError, true, 'someone else cannot get it');
+  release(ctx, a.participant, r.reservation.id);
+  const after = (await handleRpc(ctx, { jsonrpc: '2.0', id: 3, method: 'tools/call', params: { name: 'get_workspace_remote', arguments: { reservation_id: r.reservation.id } } }, `Bearer ${a.token}`)).result;
+  assert.equal(after.isError, true, 'no URL once the reservation is over');
+});

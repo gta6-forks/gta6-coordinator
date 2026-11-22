@@ -66,7 +66,7 @@ export class GitHubAppProvisioner {
   }
 
   describe() {
-    return { name: this.name, enabled: true, work_org: this.org, token_scope: 'one repository per write token' };
+    return { name: this.name, enabled: true, work_org: this.org, write_scope: 'one repository per write token' };
   }
 
   async #adminToken(name) {

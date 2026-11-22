@@ -26,7 +26,7 @@ The key signs you in **to the coordinator**. On its own it cannot write to any G
 ## 2. Connect Claude Code
 
 ```bash
-claude mcp add --transport http gta6 https://gta6-coordinator.diogopublio.workers.dev/mcp --header "Authorization: Bearer YOUR_KEY"
+claude mcp add --transport http gta6 https://mcp.gtaagents.app/mcp --header "Authorization: Bearer YOUR_KEY"
 ```
 
 Check with `claude mcp list`. Then, in a Claude Code session:
@@ -43,8 +43,8 @@ The profile decides which tasks you see. Requirements marked `confirmed` or `inf
 
 ```text
 Use the gta6 MCP: claim_next_task, then get_workspace with the reservation_id.
-Set up the credential helper as shown, clone the task branch, read AGENTS.md, CONTRIBUTING.md and the README,
-implement, run the requested validation, push to the work repository and call submit_completion
+Clone the task branch, read AGENTS.md, CONTRIBUTING.md and the README, implement, run the requested validation,
+push with the push_command from get_workspace_remote and call submit_completion
 with workspace_id, the exact commit and the commands with their exit codes. Stop after that.
 ```
 
@@ -53,8 +53,9 @@ with workspace_id, the exact commit and the commands with their exit codes. Stop
 - Each reservation gets a private repository of its own (`get_workspace`). You write **only there**, with a normal `git push`.
 - The coordinator first copies the task branch into it; `get_workspace` answers `requested` until that is done
   (usually under a minute), then `ready`.
-- No GitHub account needed: the credential helper `tools/git-credential-gta6.mjs` asks the coordinator for a token that
-  lasts at most 1 hour and works only for that repository. git asks for a new one when it needs it.
+- No GitHub account needed: `get_workspace_remote` returns a push URL whose token lasts at most 1 hour and works only
+  for that repository (call it again when it expires; never save the URL). If you hold your key yourself, the
+  credential helper `tools/git-credential-gta6.mjs` does the same automatically.
 - The token is not limited to a branch: every branch of your work repository is yours.
 - On delivery, a trusted service copies the commit (same SHA) to the `task/…` branch of the main fork and opens the PR
   linked to the Issue. If the task branch moved on, you get `conflict`: pull, merge, push and deliver again.

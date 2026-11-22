@@ -50,17 +50,18 @@ function view(ctx, w) {
     steps: repo
       ? [
           `git clone --branch ${w.task_branch} https://github.com/${w.integration_repo}.git work && cd work`,
-          `git remote add work https://github.com/${repo}.git`,
-          '# commit your changes, then:',
-          `git push work HEAD:refs/heads/${w.task_branch}`,
+          '# commit your changes, then get a push URL (valid 1 hour, only for your work repository):',
+          'call get_workspace_remote with the reservation_id, then run its push_command (do not save the URL in git config)',
           'submit_completion with workspace_id and the pushed commit SHA',
         ]
       : [],
+    alternative_if_you_hold_your_key: repo ? 'git credential helper tools/git-credential-gta6.mjs with GTA6_TOKEN/GTA6_TOKEN_FILE and GTA6_URL (see credential_helper)' : null,
     credential_helper: repo
       ? {
           endpoint: `${base}/api/git/credential`,
           setup: [
-            `git config --global credential.https://github.com/${repo}.git.helper "!node /path/to/git-credential-gta6.mjs"`,
+            `git config --global credential.https://github.com/${repo}.git.helper ""`,
+            `git config --global --add credential.https://github.com/${repo}.git.helper "!node /path/to/git-credential-gta6.mjs"`,
             `git config --global credential.https://github.com/${repo}.git.useHttpPath true`,
             'export GTA6_TOKEN=<your coordinator token>  # never commit it',
           ],
@@ -144,6 +145,29 @@ export async function issueGitCredential(ctx, participant, { repo }) {
   ctx.store.exec('UPDATE workspaces SET credentials_issued = credentials_issued + 1, updated_at = ? WHERE id = ?', ctx.now(), w.id);
   recordEvent(ctx.store, ctx.now(), participant.id, 'workspace.credential_issued', { workspace_id: w.id, expires_at: cred.expires_at });
   return cred;
+}
+
+/**
+ * MCP tool get_workspace_remote: for agents that do not hold the coordinator key (it lives only in the MCP client
+ * config). Returns a push URL carrying a GitHub token that expires in at most 1 hour and can write ONLY to the
+ * caller's own work repository, while the reservation is active. Same checks and rate limit as the credential helper.
+ */
+export async function workspaceRemote(ctx, participant, { reservation_id }) {
+  const w = ctx.store.one('SELECT * FROM workspaces WHERE reservation_id = ? AND participant_id = ?', reservation_id ?? '', participant.id);
+  if (!w || !w.repo_full_name) throw new AppError('workspace_not_found', 'call get_workspace first', 404);
+  if (w.state !== 'ready') throw new AppError('workspace_not_ready', `workspace is ${w.state}; call get_workspace until it is ready`, 409);
+  const cred = await issueGitCredential(ctx, participant, { repo: w.repo_full_name });
+  const url = `https://${cred.username}:${cred.password}@github.com/${w.repo_full_name}.git`;
+  return {
+    workspace_id: w.id,
+    repo: w.repo_full_name,
+    task_branch: w.task_branch,
+    expires_at: cred.expires_at,
+    push_url: url,
+    push_command: `git -c credential.helper= push "${url}" HEAD:refs/heads/${w.task_branch}`,
+    scope: 'write to this one work repository only; expires within 1 hour; call again for a new one',
+    warning: 'Use it directly on the command line. Do not store it in git config, files, commits, issues or chat.',
+  };
 }
 
 /** Called from submitCompletion when the delivery comes from a work repository. Runs inside its transaction. */

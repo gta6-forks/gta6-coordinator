@@ -7,7 +7,7 @@ import { claim, currentReservation, listTasks, publicTask, release } from '../se
 import { getTask } from '../services/catalog.js';
 import { submitCompletion, submitVerification } from '../services/review.js';
 import { planningContext, submitProposal } from '../services/planning.js';
-import { dispatchIntegration, getWorkspace, myWorkspace } from '../services/workspace.js';
+import { dispatchIntegration, getWorkspace, myWorkspace, workspaceRemote } from '../services/workspace.js';
 import { byModel, byProject, byTask, history, leaderboard, metricsBundle, reportUsage, summary } from '../services/metrics.js';
 import { completionSchema, planningProposalSchema, profileSchema, usageReportSchema, verificationSchema } from '../schema/schemas.js';
 
@@ -201,8 +201,14 @@ export const TOOLS = [
     run: (ctx, p, args) => getWorkspace(ctx, p, args),
   },
   {
+    name: 'get_workspace_remote',
+    description: 'Push URL for YOUR work repository (from get_workspace), with a GitHub token valid at most 1 hour that can write only there, only while your reservation is active. Use its push_command; never store the URL. Call again when it expires.',
+    inputSchema: { type: 'object', additionalProperties: false, required: ['reservation_id'], properties: { reservation_id: { type: 'string' } } },
+    run: (ctx, p, args) => workspaceRemote(ctx, p, args),
+  },
+  {
     name: 'request_git_access',
-    description: 'Ask for write access to a MAIN fork or upstream repository. Always refused: participants only ever write to their own isolated work repository (see get_workspace). No credentials are returned by MCP tools.',
+    description: 'Ask for write access to a MAIN fork or upstream repository. Always refused: participants only ever write to their own isolated work repository (see get_workspace and get_workspace_remote).',
     inputSchema: {
       type: 'object',
       additionalProperties: false,
