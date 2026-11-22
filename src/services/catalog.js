@@ -57,6 +57,9 @@ export function syncCatalog(ctx, rawTasks, roadmap) {
         now,
       );
     }
+    // Closed in the source (issue closed, or draft retired by an applied proposal): stop serving it.
+    ctx.store.exec("UPDATE tasks SET status = 'cancelled', updated_at = ? WHERE status = 'open' AND json_extract(data_json, '$.state') = 'closed'", now);
+    settleReplanned(ctx);
     if (roadmap) setMeta(ctx.store, 'roadmap', roadmap);
     recordEvent(ctx.store, now, 'system', 'catalog.synced', { valid: valid.length - inCycle.size, invalid: errors.length, cycles });
   });
@@ -65,4 +68,23 @@ export function syncCatalog(ctx, rawTasks, roadmap) {
 
 export function getRoadmap(store) {
   return getMeta(store, 'roadmap', null);
+}
+
+/**
+ * A task sent back to planning (needs_replan) is settled once its re-planning task was approved and merged:
+ * a planning mission is then done; an operational task goes back to the queue (the merged proposal may have changed it).
+ */
+export function settleReplanned(ctx) {
+  const now = ctx.now();
+  const rows = ctx.store.all(
+    `SELECT t.id AS target, json_extract(t.data_json, '$.role') AS role FROM tasks t
+     JOIN reviews r ON r.task_id = t.id
+     JOIN tasks p ON p.id = 'local:plan/replan/' || r.id
+     WHERE t.status = 'needs_replan' AND p.status = 'done'`,
+  );
+  for (const row of rows) {
+    ctx.store.exec('UPDATE tasks SET status = ?, updated_at = ? WHERE id = ?', row.role === 'plan' ? 'done' : 'open', now, row.target);
+    recordEvent(ctx.store, now, 'system', 'task.replan_settled', { task_id: row.target });
+  }
+  return rows.length;
 }

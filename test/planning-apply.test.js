@@ -93,6 +93,7 @@ test('an approved proposal creates fork issues, retires the draft, resolves refs
   assert.deepEqual(block.depends_on, [r.created['new:fixtures']], 'dependency between two new issues is resolved to the real issue id');
   assert.equal(getOverrides(ctx.store)[DRAFT].state, 'closed', 'the replaced draft is closed');
   assert.equal(getTask(ctx.store, DRAFT).data.state, 'closed');
+  assert.equal(getTask(ctx.store, DRAFT).status, 'cancelled', 'a retired draft is no longer served or listed as open');
   assert.equal(getTask(ctx.store, 'R0Y00/Xbox2Windows#77').data.priority, 'p0', 'seed task changed through an override');
 
   const again = await app.ctx.applyPlanning({ number: 7, url: 'https://github.com/gta6-forks/gta6-coordinator/pull/7' });

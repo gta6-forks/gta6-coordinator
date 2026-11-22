@@ -151,3 +151,16 @@ test('CI is read from GitHub check runs: two approvals + green checks -> ready_t
   assert.deepEqual(out.map((o) => o.conclusion), ['success']);
   assert.equal(ctx.store.one('SELECT state FROM reviews WHERE id = ?', done.review_id).state, 'ready_to_merge');
 });
+
+test('once the re-planning task is approved and merged, the task that needed it is settled', async () => {
+  const { settleReplanned } = await import('../src/services/catalog.js');
+  const { ctx, done } = await inReview();
+  const v = await google(ctx);
+  const r = claim(ctx, v.participant, { task_id: done.verification_tasks[0] });
+  const out = await submitVerification(ctx, v.participant, { reservation_id: r.reservation.id, verification: verification({ verdict: 'reject', feedback_md: 'needs work' }) });
+  assert.equal(getTask(ctx.store, 'R0Y00/Xbox2Windows#77').status, 'needs_replan');
+  assert.equal(settleReplanned(ctx), 0, 'nothing to settle while the re-planning is open');
+  ctx.store.exec("UPDATE tasks SET status = 'done' WHERE id = ?", out.replan_task);
+  assert.equal(settleReplanned(ctx), 1);
+  assert.equal(getTask(ctx.store, 'R0Y00/Xbox2Windows#77').status, 'open', 'an operational task goes back to the queue');
+});

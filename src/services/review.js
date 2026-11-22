@@ -5,7 +5,7 @@ import { validate } from '../schema/validate.js';
 import { completionSchema, verificationSchema } from '../schema/schemas.js';
 import { normalizeTask } from '../domain/task.js';
 import { recordEvent } from '../store/store.js';
-import { getTask } from './catalog.js';
+import { getTask, settleReplanned } from './catalog.js';
 import { idempotent, ownedActive, sweepExpired } from './scheduler.js';
 import { beginIntegration } from './workspace.js';
 
@@ -358,6 +358,7 @@ export function markMerged(ctx, { pr_url, commit_sha }) {
     ctx.store.exec("UPDATE reviews SET state = 'merged', updated_at = ? WHERE id = ?", now, review.id);
     ctx.store.exec("UPDATE tasks SET status = 'done', updated_at = ? WHERE id = ?", now, review.task_id);
     recordEvent(ctx.store, now, 'ci', 'review.merged', { review_id: review.id });
+    settleReplanned(ctx);
     return { status: 'merged', review_id: review.id, task_id: review.task_id };
   });
 }
