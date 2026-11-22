@@ -21,6 +21,8 @@ test('Worker code uses only Web APIs (no node: imports, no process/Buffer/requir
     assert.doesNotMatch(src, /\brequire\(/, file);
     assert.doesNotMatch(src, /\bprocess\.env\b/, file);
     assert.doesNotMatch(src, /\bBuffer\./, file);
+    // Workers throw 'Illegal invocation' when the global fetch is stored and later called as a method.
+    if (/this\.fetchImpl\s*=/.test(src)) assert.doesNotMatch(src, /fetchImpl = fetch\b/, file);
   }
 });
 

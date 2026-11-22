@@ -97,6 +97,7 @@ export function json(body, status = 200, headers = {}) {
 
 export function errorResponse(err) {
   if (err instanceof AppError) return json({ error: err.toJSON() }, err.status);
+  console.error('request_failed', String(err?.stack ?? err).replace(/gh[pousr]_[A-Za-z0-9_]+|g6[ag]_[A-Za-z0-9_-]+/g, '***').slice(0, 800));
   return json({ error: { code: 'internal_error', message: 'internal error' } }, 500);
 }
 

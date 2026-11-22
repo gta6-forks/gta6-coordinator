@@ -48,7 +48,7 @@ const split = (full) => {
 };
 
 export class GitHubAppProvisioner {
-  constructor(env, { fetchImpl = fetch, now = () => Date.now(), sleep, store = null } = {}) {
+  constructor(env, { fetchImpl = (...args) => fetch(...args), now = () => Date.now(), sleep, store = null } = {}) {
     for (const k of ['GITHUB_APP_ID', 'GITHUB_APP_PRIVATE_KEY', 'GITHUB_APP_WORK_INSTALLATION_ID', 'GITHUB_APP_FORKS_INSTALLATION_ID', 'WORKSPACE_ORG', 'WORKSPACE_ANCHOR_REPO', 'COORDINATOR_REPO']) {
       if (!env[k]) throw new AppError('github_app_not_configured', `${k} missing`, 503);
     }
@@ -129,7 +129,16 @@ export class GitHubAppProvisioner {
         ok: [201, 422],
       });
     }
-    return { status: 'ready', repo_full_name: full, integration_repo: task.fork_repo, task_branch: workspace.task_branch, base_sha: baseSha };
+    // 4) seed the work repository with the task branch (trusted Action; the participant token has no Workflows
+    //    permission, so participants can never push the fork history themselves when it contains .github/workflows).
+    await this.#dispatch('seed-workspace', {
+      workspace_id: workspace.id,
+      workspace_repo: full,
+      integration_repo: task.fork_repo,
+      task_branch: workspace.task_branch,
+      base_sha: baseSha,
+    });
+    return { status: 'seeding', repo_full_name: full, integration_repo: task.fork_repo, task_branch: workspace.task_branch, base_sha: baseSha };
   }
 
   async mintCredential({ workspace }) {
@@ -148,6 +157,16 @@ export class GitHubAppProvisioner {
       if (err.githubStatus === 404) return { status: 'already_gone' };
       throw err;
     }
+  }
+
+  async #dispatch(eventType, clientPayload) {
+    const { name: coordName } = split(this.env.COORDINATOR_REPO);
+    const t = (await this.gh.installationToken(this.coordInst, { repositories: [coordName], permissions: { contents: 'write' } })).token;
+    await this.gh.request('POST', `/repos/${this.env.COORDINATOR_REPO}/dispatches`, {
+      token: t,
+      body: { event_type: eventType, client_payload: clientPayload },
+      ok: [204],
+    });
   }
 
   async integrate({ workspace, head_sha }) {

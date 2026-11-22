@@ -29,7 +29,7 @@ export function hasWrite(permissions) {
 }
 
 export class GitHubAppClient {
-  constructor({ appId, privateKeyPem, fetchImpl = fetch, now = () => Date.now(), sleep = (ms) => new Promise((r) => setTimeout(r, ms)) }) {
+  constructor({ appId, privateKeyPem, fetchImpl = (...args) => fetch(...args), now = () => Date.now(), sleep = (ms) => new Promise((r) => setTimeout(r, ms)) }) {
     if (!appId) throw new AppError('github_app_not_configured', 'GITHUB_APP_ID missing', 503);
     this.appId = appId;
     this.privateKeyPem = privateKeyPem;

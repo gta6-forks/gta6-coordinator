@@ -31,7 +31,7 @@ export function scanChanges(changes) {
 export const redact = (s) => String(s).replace(/(basic|bearer|token)\s+[A-Za-z0-9+\/=._-]+/gi, '$1 ***').replace(/gh[pousr]_[A-Za-z0-9_]+/g, '***');
 
 // One header per remote URL, so each token is only ever sent to its own repository.
-function git(cwd, args, auth = {}) {
+export function git(cwd, args, auth = {}) {
   const cfg = [];
   for (const [repo, token] of Object.entries(auth)) {
     const b = Buffer.from(`x-access-token:${token}`).toString('base64');
@@ -64,7 +64,7 @@ export async function repoToken(installationId, repoName, permissions) {
   return (await res.json()).token;
 }
 
-async function callback(body) {
+export async function callback(body) {
   const res = await fetch(`${process.env.GTA6_COORDINATOR_URL.replace(/\/$/, '')}/api/integration`, {
     method: 'POST',
     headers: { 'content-type': 'application/json', 'x-coordinator-secret': process.env.GTA6_INTEGRATION_CALLBACK_SECRET },

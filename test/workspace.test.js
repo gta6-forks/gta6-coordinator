@@ -261,3 +261,26 @@ test('integrator content scan blocks game data, workflow edits and large files',
   const leaked = redact('git -c http.extraheader=AUTHORIZATION: basic eC1hY2Nlc3M6Z2hzXzE= failed; token ghs_abcDEF123');
   assert.ok(!/eC1hY2Nl|ghs_abc/.test(leaked), 'integrator errors never carry tokens');
 });
+
+test('seeding: no credential until the trusted Action seeds the work repo with the task branch', async () => {
+  class SeedingProvisioner extends FakeProvisioner {
+    async provision({ workspace }) {
+      this.calls.push(['provision', workspace.id]);
+      return { status: 'seeding', repo_full_name: `gta6-work/w-${workspace.id.slice(3)}`, base_sha: 'b'.repeat(40) };
+    }
+  }
+  const { ctx, provisioner } = await world({ provisioner: new SeedingProvisioner() });
+  const a = await anon(ctx);
+  const r = claim(ctx, a.participant, {});
+  const ws = await getWorkspace(ctx, a.participant, { reservation_id: r.reservation.id });
+  assert.equal(ws.state, 'requested');
+  assert.ok(ws.repo);
+  await assert.rejects(issueGitCredential(ctx, a.participant, { repo: ws.repo }));
+  const again = await getWorkspace(ctx, a.participant, { reservation_id: r.reservation.id });
+  assert.equal(again.workspace_id, ws.workspace_id);
+  assert.equal(provisioner.calls.filter((c) => c[0] === 'provision').length, 1, 'no re-provisioning while seeding');
+  assert.throws(() => integrationResult(ctx, { workspace_id: ws.workspace_id, outcome: 'seeded', commit_sha: 'c'.repeat(40) }), /base/);
+  assert.equal(integrationResult(ctx, { workspace_id: ws.workspace_id, outcome: 'seeded', commit_sha: 'b'.repeat(40) }).status, 'ready');
+  const cred = await issueGitCredential(ctx, a.participant, { repo: ws.repo });
+  assert.equal(cred.username, 'x-access-token');
+});

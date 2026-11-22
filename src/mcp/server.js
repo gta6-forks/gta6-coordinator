@@ -258,6 +258,7 @@ export async function handleRpc(ctx, msg, authorization) {
         return { jsonrpc: '2.0', id, result: toolResult(out) };
       } catch (err) {
         if (err instanceof AppError) return { jsonrpc: '2.0', id, result: toolResult({ error: err.toJSON() }, true) };
+        console.error('tool_failed', params.name, String(err?.stack ?? err).replace(/gh[pousr]_[A-Za-z0-9_]+|g6[ag]_[A-Za-z0-9_-]+/g, '***').slice(0, 800));
         return { jsonrpc: '2.0', id, result: toolResult({ error: { code: 'internal_error', message: 'internal error' } }, true) };
       }
     }

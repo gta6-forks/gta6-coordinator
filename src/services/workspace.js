@@ -95,10 +95,21 @@ export async function getWorkspace(ctx, participant, { reservation_id }) {
     return rowById(ctx, id);
   });
   if (created.state !== 'requested') return view(ctx, created);
+  // Seeding in progress: answer without re-provisioning for a while; after that, provision again (idempotent retry).
+  if (created.repo_full_name && ctx.now() - created.updated_at < SEED_RETRY_MS) {
+    return { ...view(ctx, created), provisioner: ctx.provisioner.describe() };
+  }
 
   const task = getTask(ctx.store, created.task_id);
   const res = await ctx.provisioner.provision({ workspace: created, task: task.data });
-  if (res.repo_full_name) {
+  if (res.status === 'seeding' && res.repo_full_name) {
+    ctx.store.exec(
+      `UPDATE workspaces SET repo_full_name = ?, integration_repo = COALESCE(?, integration_repo), task_branch = COALESCE(?, task_branch),
+         base_sha = ?, last_error = NULL, updated_at = ? WHERE id = ? AND state = 'requested'`,
+      res.repo_full_name, res.integration_repo ?? null, res.task_branch ?? null, res.base_sha ?? null, ctx.now(), created.id,
+    );
+    recordEvent(ctx.store, ctx.now(), 'system', 'workspace.seeding', { workspace_id: created.id, repo: res.repo_full_name });
+  } else if (res.repo_full_name) {
     ctx.store.exec(
       `UPDATE workspaces SET state = 'ready', repo_full_name = ?, integration_repo = COALESCE(?, integration_repo),
          task_branch = COALESCE(?, task_branch), base_sha = ?, updated_at = ? WHERE id = ? AND state = 'requested'`,
@@ -159,10 +170,27 @@ export async function dispatchIntegration(ctx, workspaceId) {
  *   failure: { workspace_id, outcome: 'conflict' | 'error', detail }        participant pulls, fixes, resubmits
  *   unsafe:  { workspace_id, outcome: 'forbidden_content', detail }         access revoked, repo queued for deletion
  */
+export const SEED_RETRY_MS = 10 * 60 * 1000;
+
+/** Callback of the seed-workspace Action: the work repository now holds the task branch at base_sha. */
+function seedResult(ctx, w, body) {
+  const now = ctx.now();
+  if (w.state !== 'requested' || !w.repo_full_name) return { status: 'ignored', reason: `workspace is ${w.state}` };
+  if (body.outcome === 'seed_failed') {
+    ctx.store.exec('UPDATE workspaces SET last_error = ?, updated_at = ? WHERE id = ?', `seed_failed: ${String(body.detail ?? '').slice(0, 500)}`, now - SEED_RETRY_MS, w.id);
+    return { status: 'seed_failed' };
+  }
+  if (body.commit_sha !== w.base_sha) throw new AppError('commit_mismatch', 'seeded commit must be the task branch base', 409);
+  ctx.store.exec("UPDATE workspaces SET state = 'ready', last_error = NULL, updated_at = ? WHERE id = ? AND state = 'requested'", now, w.id);
+  recordEvent(ctx.store, now, 'integrator', 'workspace.ready', { workspace_id: w.id, repo: w.repo_full_name, seeded: true });
+  return { status: 'ready' };
+}
+
 export function integrationResult(ctx, body) {
   return ctx.store.tx(() => {
     const w = rowById(ctx, body.workspace_id ?? '');
     if (!w) throw new AppError('workspace_not_found', 'unknown workspace', 404);
+    if (body.outcome === 'seeded' || body.outcome === 'seed_failed') return seedResult(ctx, w, body);
     sweepExpired(ctx);
     expireLateIntegrations(ctx);
     const review = ctx.store.one("SELECT * FROM reviews WHERE workspace_id = ? AND state = 'integrating'", w.id);

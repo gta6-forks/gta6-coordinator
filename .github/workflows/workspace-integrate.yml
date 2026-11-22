@@ -8,14 +8,33 @@
 name: workspace-integrate
 on:
   repository_dispatch:
-    types: [integrate-workspace]
+    types: [integrate-workspace, seed-workspace]
 permissions:
   contents: read
 concurrency:
-  group: integrate-${{ github.event.client_payload.integration_repo }}-${{ github.event.client_payload.task_branch }}
+  group: ${{ github.event.action }}-${{ github.event.client_payload.integration_repo }}-${{ github.event.client_payload.task_branch }}
   cancel-in-progress: false
 jobs:
+  seed:
+    if: github.event.action == 'seed-workspace'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Copy the fork task branch into the new work repository (token covers that one repository)
+        env:
+          P: ${{ toJson(github.event.client_payload) }}
+          GTA6_APP_ID: ${{ vars.GTA6_APP_ID }}
+          GTA6_APP_PRIVATE_KEY: ${{ secrets.GTA6_APP_PRIVATE_KEY }}
+          GTA6_WORK_INSTALLATION_ID: ${{ vars.GTA6_WORK_INSTALLATION_ID }}
+          GTA6_COORDINATOR_URL: ${{ vars.GTA6_COORDINATOR_URL }}
+          GTA6_INTEGRATION_CALLBACK_SECRET: ${{ secrets.GTA6_INTEGRATION_CALLBACK_SECRET }}
+        run: node tools/seed-workspace.mjs
   integrate:
+    if: github.event.action == 'integrate-workspace'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:

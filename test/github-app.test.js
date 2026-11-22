@@ -89,7 +89,7 @@ test('provision creates one private repo without Actions and the fork task branc
   const gh = fakeGitHub();
   const p = await provisioner(gh);
   const out = await p.provision({ workspace, task: taskData });
-  assert.equal(out.status, 'ready');
+  assert.equal(out.status, 'seeding');
   assert.equal(out.repo_full_name, 'gta6-work/w-0123456789abcdef');
   assert.equal(out.base_sha, 'f'.repeat(40));
   const created = gh.repos.get('w-0123456789abcdef');
@@ -97,6 +97,9 @@ test('provision creates one private repo without Actions and the fork task branc
   assert.equal(created.auto_init, false);
   assert.ok(gh.calls.some((c) => c.method === 'PUT' && c.path.endsWith('/actions/permissions') && c.body.enabled === false));
   assert.ok(gh.calls.some((c) => c.method === 'POST' && c.path.endsWith('/git/refs') && c.body.ref === 'refs/heads/task/issue-77'));
+  const seed = gh.calls.find((c) => c.method === 'POST' && c.path.endsWith('/dispatches') && c.body.event_type === 'seed-workspace');
+  assert.ok(seed, 'the work repository is seeded by the trusted Action');
+  assert.equal(seed.body.client_payload.base_sha, 'f'.repeat(40));
   for (const t of tokenRequests(gh.calls)) {
     if (hasWrite(t.permissions)) assert.equal(t.repositories.length, 1, JSON.stringify(t));
   }
@@ -124,7 +127,7 @@ test('creation is idempotent for the same workspace and refuses to adopt someone
   const gh = fakeGitHub();
   const p = await provisioner(gh);
   await p.provision({ workspace, task: taskData });
-  assert.equal((await p.provision({ workspace, task: taskData })).status, 'ready');
+  assert.equal((await p.provision({ workspace, task: taskData })).status, 'seeding');
   const other = fakeGitHub({ existing: new Set(['w-0123456789abcdef']) });
   const p2 = await provisioner(other);
   await assert.rejects(p2.provision({ workspace, task: taskData }), /not this workspace/);
@@ -134,12 +137,12 @@ test('secondary rate limit is retried; revoke archives; cleanup deletes; integra
   const gh = fakeGitHub({ rateLimitOnce: true });
   const p = await provisioner(gh);
   const out = await p.provision({ workspace, task: taskData });
-  assert.equal(out.status, 'ready');
+  assert.equal(out.status, 'seeding');
   const ws = { ...workspace, repo_full_name: out.repo_full_name };
   assert.equal((await p.revoke({ workspace: ws })).status, 'archived');
   assert.ok(gh.calls.some((c) => c.method === 'PATCH' && c.body.archived === true));
   assert.equal((await p.integrate({ workspace: ws, head_sha: 'c'.repeat(40) })).status, 'dispatched');
-  const dispatch = gh.calls.find((c) => c.path.endsWith('/dispatches'));
+  const dispatch = gh.calls.find((c) => c.path.endsWith('/dispatches') && c.body.event_type === 'integrate-workspace');
   assert.equal(dispatch.body.event_type, 'integrate-workspace');
   assert.equal(dispatch.body.client_payload.head_sha, 'c'.repeat(40));
   assert.ok(Object.keys(dispatch.body.client_payload).length <= 10, 'GitHub allows at most 10 top-level payload keys');

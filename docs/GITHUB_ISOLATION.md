@@ -70,6 +70,16 @@ Fonte: docs.github.com. Não foi criado nada no GitHub.
    **nunca** entra no token do participante: o token dele é pedido com `permissions: { contents: "write" }` e
    `repositories: [<repo de trabalho>]`.
 
+## 3b. Semeamento do repositório de trabalho (2026-11-21)
+
+O teste ponta a ponta em produção mostrou que o participante não consegue enviar o histórico do fork para o
+repositório de trabalho vazio: 4 dos 5 forks têm `.github/workflows/` e o token do participante (só `contents`) é
+recusado, como manda o V-3. Correção: depois de criar o repositório, o provisionador dispara `seed-workspace`; o job
+`seed` do workflow do coordenador copia a branch de tarefa do fork (leitura pública) para o repositório de trabalho com
+um token de **um** repositório e `contents`+`workflows` write, e avisa o Worker (`outcome: seeded`, mesmo SHA de
+`base_sha`). Só então o workspace fica `ready` e o participante recebe credencial. Isso exige a permissão **Workflows
+(write)** no App; ela nunca entra no token do participante.
+
 ## 4. Ciclo de vida do repositório de trabalho
 
 ```

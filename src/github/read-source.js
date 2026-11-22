@@ -51,7 +51,7 @@ export function issueToTask(repo, issue, extra = {}) {
 }
 
 export class GitHubReadOnlySource {
-  constructor({ repos, readToken = null, fetchImpl = fetch, label = 'gta6-task', roadmap }) {
+  constructor({ repos, readToken = null, fetchImpl = (...args) => fetch(...args), label = 'gta6-task', roadmap }) {
     this.repos = repos;
     this.readToken = readToken;
     this.fetchImpl = fetchImpl;
