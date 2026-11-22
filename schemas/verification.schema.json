@@ -1,0 +1,85 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://gta6-explorer.invalid/schemas/verification.schema.json",
+  "title": "Independent verification of one commit",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "commit_sha",
+    "verdict",
+    "checks",
+    "feedback_md",
+    "environment"
+  ],
+  "properties": {
+    "commit_sha": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{40}$"
+    },
+    "verdict": {
+      "enum": [
+        "approve",
+        "reject"
+      ]
+    },
+    "checks": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "command",
+          "exit_code"
+        ],
+        "properties": {
+          "command": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1000
+          },
+          "exit_code": {
+            "type": "integer"
+          },
+          "summary": {
+            "type": "string",
+            "maxLength": 4000
+          }
+        }
+      }
+    },
+    "feedback_md": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 20000
+    },
+    "environment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "os"
+      ],
+      "properties": {
+        "os": {
+          "type": "string",
+          "maxLength": 100
+        },
+        "gpu": {
+          "type": "string",
+          "maxLength": 100
+        },
+        "driver": {
+          "type": "string",
+          "maxLength": 100
+        },
+        "toolchain": {
+          "type": "string",
+          "maxLength": 300
+        }
+      }
+    },
+    "ai_assisted": {
+      "type": "boolean"
+    }
+  }
+}

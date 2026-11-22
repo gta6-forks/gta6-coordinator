@@ -1,0 +1,22 @@
+# Copy to .dev.vars for `wrangler dev` (git-ignored). Production: `wrangler secret put <NAME> --env production`.
+# Google OAuth client from the owner's Google Cloud project (docs/DEPLOY.md §2). Leave empty to disable Google login.
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=
+# Random string (e.g. `openssl rand -base64 32`). Peppers MCP token hashes and IP hashes.
+TOKEN_PEPPER=
+# Shared secret the CI/merge webhook sends in X-Coordinator-Secret. Leave empty to disable /api/ci.
+CI_WEBHOOK_SECRET=
+# Optional, READ-ONLY GitHub token (raises API rate limits for TASK_SOURCE=github). Never a write token.
+GITHUB_READ_TOKEN=
+# --- Isolated work repositories (docs/GITHUB_ISOLATION.md). Enable only after `node tools/github-gate.mjs` passes.
+# WORKSPACE_PROVISIONER=github-app
+# GitHub App (backend only; NEVER sent to participants). Private key converted to PKCS#8 for Web Crypto:
+#   openssl pkcs8 -topk8 -nocrypt -in app.private-key.pem -out app.pkcs8.pem
+GITHUB_APP_ID=
+GITHUB_APP_WORK_INSTALLATION_ID=
+GITHUB_APP_FORKS_INSTALLATION_ID=
+GITHUB_APP_PRIVATE_KEY=
+# Webhook secret configured on the GitHub App (X-Hub-Signature-256).
+GITHUB_WEBHOOK_SECRET=
+# Shared secret the integration workflow sends back to /api/integration.
+INTEGRATION_CALLBACK_SECRET=

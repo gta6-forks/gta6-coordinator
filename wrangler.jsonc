@@ -1,0 +1,67 @@
+{
+  // Cloudflare Worker for the GTA 6 Explorer coordinator. Nothing here is a secret.
+  // Secrets are set with `wrangler secret put <NAME>` (production) or .dev.vars (local; never committed).
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "gta6-coordinator",
+  "main": "src/worker.js",
+  "compatibility_date": "2025-09-01",
+
+  // Landing page + onboarding (Workers Static Assets). Paths without a file fall through to the Worker.
+  "assets": { "directory": "./public", "binding": "ASSETS" },
+
+  // Single SQLite-backed Durable Object that owns all coordination state (see docs/SPEC.md, D-INFRA-2).
+  "durable_objects": { "bindings": [{ "name": "COORDINATOR", "class_name": "Coordinator" }] },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["Coordinator"] }],
+
+  // OAuth state/PKCE (TTL 10 min) and Google JWKS cache. Create with:
+  //   npx wrangler kv namespace create OAUTH_KV   -> paste the id below
+  "kv_namespaces": [{ "binding": "OAUTH_KV", "id": "REPLACE_WITH_OAUTH_KV_NAMESPACE_ID" }],
+
+  // Periodic catalog re-sync (seed or GitHub read-only source).
+  "triggers": { "crons": ["*/30 * * * *"] },
+
+  "observability": { "enabled": true },
+
+  "vars": {
+    "PUBLIC_BASE_URL": "http://localhost:8787",
+    "ALLOWED_ORIGINS": "",
+    "RESERVATION_TTL_HOURS": "24",
+    "RECLAIM_COOLDOWN_HOURS": "72",
+    "ANON_SIGNUPS_PER_HOUR": "10",
+    "TASK_SOURCE": "seed",
+    "TASK_REPOS": "",
+    "COORDINATOR_REPO": "",
+    "GOOGLE_ALLOWED_DOMAIN": "",
+    "WORKSPACE_PROVISIONER": "disabled",
+    "WORKSPACE_ORG": "",
+    "WORKSPACE_ANCHOR_REPO": "_anchor",
+    "WORKSPACE_RETENTION_DAYS": "7",
+    "WORKSPACE_CREDENTIALS_PER_HOUR": "60"
+  },
+
+  "env": {
+    "production": {
+      "name": "gta6-coordinator",
+      "vars": {
+        "PUBLIC_BASE_URL": "https://gta6-coordinator.diogopublio.workers.dev",
+        "ALLOWED_ORIGINS": "",
+        "RESERVATION_TTL_HOURS": "24",
+        "RECLAIM_COOLDOWN_HOURS": "72",
+        "ANON_SIGNUPS_PER_HOUR": "10",
+        "TASK_SOURCE": "seed",
+        "TASK_REPOS": "",
+        "COORDINATOR_REPO": "gta6-forks/gta6-coordinator",
+        "GOOGLE_ALLOWED_DOMAIN": "",
+        "WORKSPACE_PROVISIONER": "disabled",
+        "WORKSPACE_ORG": "gta6-work",
+        "WORKSPACE_ANCHOR_REPO": "_anchor",
+        "WORKSPACE_RETENTION_DAYS": "7",
+        "WORKSPACE_CREDENTIALS_PER_HOUR": "60"
+      },
+      "durable_objects": { "bindings": [{ "name": "COORDINATOR", "class_name": "Coordinator" }] },
+      "migrations": [{ "tag": "v1", "new_sqlite_classes": ["Coordinator"] }],
+      "kv_namespaces": [{ "binding": "OAUTH_KV", "id": "b6ed868ef50b4d009267e553f6686298" }],
+      "triggers": { "crons": ["*/30 * * * *"] }
+    }
+  }
+}

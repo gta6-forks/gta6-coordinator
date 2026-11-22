@@ -1,0 +1,35 @@
+# Trusted integration job (docs/GITHUB_ISOLATION.md §4). Runs only on repository_dispatch sent by the coordinator
+# (WORKSPACE_PROVISIONER=github-app).
+#
+# Payload: { workspace_repo, integration_repo, task_branch, head_sha, issue, workspace_id }
+# Steps: read token (work repo) + write token (main fork only) -> fetch head_sha from the work repo ->
+# refuse forbidden content -> fast-forward push to task_branch (same SHA, no rewrite) -> open/refresh the PR
+# in the integration repo linked to the original issue -> call back the coordinator.
+name: workspace-integrate
+on:
+  repository_dispatch:
+    types: [integrate-workspace]
+permissions:
+  contents: read
+concurrency:
+  group: integrate-${{ github.event.client_payload.integration_repo }}-${{ github.event.client_payload.task_branch }}
+  cancel-in-progress: false
+jobs:
+  integrate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Fetch, scan, fast-forward push, open PR (each token covers one repository)
+        env:
+          P: ${{ toJson(github.event.client_payload) }}
+          GTA6_APP_ID: ${{ vars.GTA6_APP_ID }}
+          GTA6_APP_PRIVATE_KEY: ${{ secrets.GTA6_APP_PRIVATE_KEY }}
+          GTA6_WORK_INSTALLATION_ID: ${{ vars.GTA6_WORK_INSTALLATION_ID }}
+          GTA6_FORKS_INSTALLATION_ID: ${{ vars.GTA6_FORKS_INSTALLATION_ID }}
+          GTA6_COORDINATOR_URL: ${{ vars.GTA6_COORDINATOR_URL }}
+          GTA6_INTEGRATION_CALLBACK_SECRET: ${{ secrets.GTA6_INTEGRATION_CALLBACK_SECRET }}
+        run: node tools/integrate-workspace.mjs

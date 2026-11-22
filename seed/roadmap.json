@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "objective": {
+    "id": "objective",
+    "protected": true,
+    "text_md": "Evoluir, de forma aberta e legal, as ferramentas de pesquisa e interoperabilidade dos cinco projetos (Leonida, Xbox2Windows, ScarlettX, rpf9-explorer, americas-recomp), sem distribuir builds, assets, chaves ou qualquer conteúdo proprietário. Mudanças neste objetivo exigem autorização humana do proprietário."
+  },
+  "milestones": [
+    { "id": "objective", "title": "Objetivo final", "protected": true },
+    { "id": "M1-entrada", "title": "Primeiras contribuições sem o jogo (PE loader, testes do ScarlettX, planejamento inicial)", "protected": false },
+    { "id": "M2-shaders", "title": "Semântica de shaders (system values, fp16) com evidência de hardware", "protected": false },
+    { "id": "M3-assets", "title": "Modelos e texturas (pin do rpf9-explorer, BCPack)", "protected": false },
+    { "id": "M4-runtime", "title": "Runtime GDK (xgameruntime, D3D12 do Xbox)", "protected": false }
+  ],
+  "protected_tasks": []
+}

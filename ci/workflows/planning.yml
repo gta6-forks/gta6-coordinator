@@ -1,0 +1,50 @@
+# Validates planning proposals (planning/proposals/*.json) on PRs, and runs the apply step after merge.
+# Apply uses the backend GitHub App; until it is wired (docs/SPEC.md P-3) it only reports "pending_decision".
+# This workflow never pushes and never bypasses branch protection: changes reach main only through reviewed PRs.
+name: planning
+on:
+  pull_request:
+    paths: ['planning/proposals/**']
+  push:
+    branches: [main]
+    paths: ['planning/proposals/**']
+permissions:
+  contents: read
+  pull-requests: read
+jobs:
+  validate:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Validate changed proposals
+        run: |
+          files=$(git diff --name-only --diff-filter=AM origin/${{ github.base_ref }}...HEAD -- 'planning/proposals/*.json')
+          if [ -z "$files" ]; then echo "no proposals changed"; exit 0; fi
+          node tools/validate-planning.mjs $files
+  apply:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    environment: planning-apply   # PENDING (P-8): required reviewers = owner-approved list for protected changes
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Apply (gated)
+        env:
+          # PENDING (P-8): fill from the coordinator API (two approvals of this exact commit) and from the
+          # protected-environment approval. Until then apply is refused for protected changes and is a no-op otherwise.
+          PLANNING_VERIFICATIONS: ${{ vars.PLANNING_VERIFICATIONS_OVERRIDE || '0' }}
+          PLANNING_HUMAN_APPROVED: 'false'
+        run: |
+          files=$(git diff --name-only --diff-filter=AM HEAD~1 HEAD -- 'planning/proposals/*.json')
+          if [ -z "$files" ]; then echo "no proposals changed"; exit 0; fi
+          node tools/validate-planning.mjs --apply $files

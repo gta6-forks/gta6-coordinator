@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://gta6-explorer.invalid/schemas/profile.schema.json",
+  "title": "Participant capability profile (self-declared)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "os"
+  ],
+  "properties": {
+    "os": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "enum": [
+          "windows",
+          "linux",
+          "macos"
+        ]
+      }
+    },
+    "gpu_vendor": {
+      "enum": [
+        "none",
+        "amd",
+        "nvidia",
+        "intel",
+        "apple",
+        "other"
+      ]
+    },
+    "gpu_model": {
+      "type": "string",
+      "maxLength": 100
+    },
+    "tools": {
+      "type": "array",
+      "uniqueItems": true,
+      "maxItems": 50,
+      "items": {
+        "type": "string",
+        "maxLength": 60
+      }
+    },
+    "has_own_game_copy": {
+      "type": "boolean"
+    },
+    "accept_unknown_requirements": {
+      "type": "boolean"
+    },
+    "agent": {
+      "type": "string",
+      "maxLength": 80
+    }
+  }
+}

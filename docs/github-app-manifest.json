@@ -1,0 +1,14 @@
+{
+  "name": "gta6-explorer-coordinator",
+  "url": "https://gta6-coordinator.diogopublio.workers.dev/",
+  "hook_attributes": { "url": "https://gta6-coordinator.diogopublio.workers.dev/api/github/webhook", "active": true },
+  "redirect_url": "https://gta6-coordinator.diogopublio.workers.dev/",
+  "public": false,
+  "default_permissions": {
+    "metadata": "read",
+    "contents": "write",
+    "pull_requests": "write",
+    "administration": "write"
+  },
+  "default_events": ["pull_request", "push"]
+}

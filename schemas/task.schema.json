@@ -1,0 +1,362 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://gta6-explorer.invalid/schemas/task.schema.json",
+  "title": "GTA 6 Explorer coordinator task",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "title",
+    "kind",
+    "type",
+    "role",
+    "difficulty",
+    "priority",
+    "readiness",
+    "state",
+    "depends_on",
+    "instructions_md",
+    "requirements",
+    "acceptance",
+    "deliverables",
+    "sources"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^(([A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+#[1-9][0-9]*)|(local:[a-z0-9][a-z0-9/_.-]*)|(draft:[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+/[a-z0-9-]+))$"
+    },
+    "repo": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$"
+    },
+    "fork_repo": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$"
+    },
+    "github_kind": {
+      "enum": [
+        "issue",
+        "pull_request",
+        null
+      ]
+    },
+    "url": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "maxLength": 300
+    },
+    "title": {
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 200
+    },
+    "kind": {
+      "enum": [
+        "issue",
+        "subissue",
+        "group"
+      ]
+    },
+    "parent": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^(([A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+#[1-9][0-9]*)|(local:[a-z0-9][a-z0-9/_.-]*)|(draft:[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+/[a-z0-9-]+))$"
+    },
+    "type": {
+      "enum": [
+        "operational",
+        "strategic"
+      ]
+    },
+    "role": {
+      "enum": [
+        "execute",
+        "plan",
+        "verify"
+      ]
+    },
+    "difficulty": {
+      "enum": [
+        "low",
+        "medium",
+        "high"
+      ]
+    },
+    "difficulty_source": {
+      "enum": [
+        "estimate",
+        "maintainer"
+      ]
+    },
+    "priority": {
+      "enum": [
+        "p0",
+        "p1",
+        "p2",
+        "p3"
+      ]
+    },
+    "readiness": {
+      "enum": [
+        "draft",
+        "ready",
+        "needs_info",
+        "blocked_external"
+      ]
+    },
+    "state": {
+      "enum": [
+        "open",
+        "closed"
+      ]
+    },
+    "milestone": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "depends_on": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "pattern": "^(([A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+#[1-9][0-9]*)|(local:[a-z0-9][a-z0-9/_.-]*)|(draft:[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+/[a-z0-9-]+))$"
+      }
+    },
+    "instructions_md": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 20000
+    },
+    "requirements": {
+      "$ref": "#/$defs/requirements"
+    },
+    "acceptance": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/sourced_text"
+      }
+    },
+    "deliverables": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "enum": [
+          "code",
+          "knowledge_md",
+          "tests",
+          "artifacts",
+          "report",
+          "planning_proposal",
+          "verification_report"
+        ]
+      }
+    },
+    "sources": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/source"
+      }
+    },
+    "restrictions": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "maxLength": 300
+      }
+    },
+    "review": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "review_id",
+        "target_task_id"
+      ],
+      "properties": {
+        "review_id": {
+          "type": "string"
+        },
+        "target_task_id": {
+          "type": "string",
+          "pattern": "^(([A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+#[1-9][0-9]*)|(local:[a-z0-9][a-z0-9/_.-]*)|(draft:[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+/[a-z0-9-]+))$"
+        },
+        "slot": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 2
+        },
+        "commit_sha": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{40}$"
+        },
+        "pr_url": {
+          "type": "string",
+          "pattern": "^https://github\\.com/[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+/pull/[1-9][0-9]*$"
+        },
+        "executor_id": {
+          "type": "string"
+        }
+      }
+    }
+  },
+  "$defs": {
+    "confidence": {
+      "enum": [
+        "confirmed",
+        "inferred",
+        "unspecified"
+      ]
+    },
+    "requirement": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "value",
+        "confidence"
+      ],
+      "properties": {
+        "kind": {
+          "enum": [
+            "os",
+            "gpu",
+            "tool",
+            "game_files",
+            "hardware",
+            "skill",
+            "network",
+            "disk"
+          ]
+        },
+        "value": {},
+        "detail": {
+          "type": "string",
+          "maxLength": 500
+        },
+        "source": {
+          "type": "string",
+          "maxLength": 300
+        },
+        "confidence": {
+          "$ref": "#/$defs/confidence"
+        }
+      }
+    },
+    "phase": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "required",
+        "optional",
+        "suggested"
+      ],
+      "properties": {
+        "required": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/requirement"
+          }
+        },
+        "optional": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/requirement"
+          }
+        },
+        "suggested": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/requirement"
+          }
+        }
+      }
+    },
+    "requirements": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "implementation",
+        "validation"
+      ],
+      "properties": {
+        "implementation": {
+          "$ref": "#/$defs/phase"
+        },
+        "validation": {
+          "$ref": "#/$defs/phase"
+        }
+      }
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "ref"
+      ],
+      "properties": {
+        "kind": {
+          "enum": [
+            "issue",
+            "pull_request",
+            "file",
+            "url",
+            "coordinator",
+            "user_decision"
+          ]
+        },
+        "ref": {
+          "type": "string",
+          "maxLength": 300
+        },
+        "heading": {
+          "type": "string",
+          "maxLength": 200
+        },
+        "lines": {
+          "type": "string",
+          "maxLength": 40
+        },
+        "retrieved_at": {
+          "type": "string",
+          "maxLength": 40
+        }
+      }
+    },
+    "sourced_text": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "text",
+        "confidence"
+      ],
+      "properties": {
+        "text": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1000
+        },
+        "source": {
+          "type": "string",
+          "maxLength": 300
+        },
+        "confidence": {
+          "$ref": "#/$defs/confidence"
+        }
+      }
+    }
+  }
+}

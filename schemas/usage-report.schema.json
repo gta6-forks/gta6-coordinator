@@ -1,0 +1,91 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://gta6-explorer.invalid/schemas/usage-report.schema.json",
+  "title": "Self-reported model usage for one task (agent_report_usage)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "report_id",
+    "task_id",
+    "provider",
+    "model_id",
+    "measurement",
+    "method",
+    "source",
+    "confidence"
+  ],
+  "properties": {
+    "report_id": {
+      "type": "string",
+      "minLength": 8,
+      "maxLength": 100
+    },
+    "task_id": {
+      "type": "string",
+      "pattern": "^(([A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+#[1-9][0-9]*)|(local:[a-z0-9][a-z0-9/_.-]*)|(draft:[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+/[a-z0-9-]+))$"
+    },
+    "provider": {
+      "type": "string",
+      "minLength": 2,
+      "maxLength": 40
+    },
+    "model_id": {
+      "type": "string",
+      "minLength": 2,
+      "maxLength": 120
+    },
+    "model_version": {
+      "type": "string",
+      "maxLength": 80
+    },
+    "measurement": {
+      "enum": [
+        "reported_actual",
+        "estimated",
+        "unknown"
+      ]
+    },
+    "input_tokens": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 50000000
+    },
+    "output_tokens": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 50000000
+    },
+    "total_tokens": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 100000000
+    },
+    "method": {
+      "enum": [
+        "runtime_usage_api",
+        "client_usage_report",
+        "tokenizer_count",
+        "heuristic",
+        "other",
+        "none"
+      ]
+    },
+    "source": {
+      "type": "string",
+      "minLength": 2,
+      "maxLength": 200
+    },
+    "confidence": {
+      "enum": [
+        "high",
+        "medium",
+        "low",
+        "none"
+      ]
+    },
+    "notes": {
+      "type": "string",
+      "maxLength": 2000
+    }
+  }
+}

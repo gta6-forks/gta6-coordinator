@@ -1,0 +1,20 @@
+{
+  "name": "gta6-explorer-coordinator",
+  "version": "0.1.0",
+  "private": true,
+  "description": "MCP coordinator for distributed, AI-assisted contributions to five upstream research projects. Cloudflare Workers + Durable Objects.",
+  "type": "module",
+  "license": "MIT",
+  "engines": { "node": ">=22.5" },
+  "scripts": {
+    "build": "node tools/build.mjs",
+    "check": "node tools/build.mjs --check",
+    "test": "node tools/build.mjs --check && node --test 'test/*.test.js'",
+    "dev": "wrangler dev",
+    "deploy:dry-run": "wrangler deploy --dry-run --outdir dist",
+    "validate:planning": "node tools/validate-planning.mjs"
+  },
+  "devDependencies": {
+    "wrangler": "^4.0.0"
+  }
+}

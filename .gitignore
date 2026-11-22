@@ -1,0 +1,21 @@
+node_modules/
+.wrangler/
+dist/
+.dev.vars
+.dev.vars.*
+!.dev.vars.example
+*.db
+*.sqlite
+.DS_Store
+# Never commit game data, packages or extracted assets
+game-files/
+*.rpf
+*.xvd
+*.xvc
+*.msixvc
+*.ysc
+*.ytd
+*.ydr
+*.yft
+*.awc
+*.ttpf
