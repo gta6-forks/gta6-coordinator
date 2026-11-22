@@ -31,21 +31,39 @@ export function mcpUrl(env, request) {
   return `${(env.PUBLIC_BASE_URL ?? new URL(request.url).origin).replace(/\/$/, '')}/mcp`;
 }
 
-export function tokenPage({ title, participant, token, mcp }) {
-  const cmd = `claude mcp add --transport http gta6 ${mcp} --header "Authorization: Bearer ${token}"`;
-  return `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="robots" content="noindex"><title>${escapeHtml(title)}</title>
-<style>:root{--bg:#f7f7f5;--fg:#1c1c1a;--muted:#5d5d58;--card:#fff;--line:#deded8;--accent:#0b6e4f}
+const PAGE_STYLE = `:root{--bg:#f7f7f5;--fg:#1c1c1a;--muted:#5d5d58;--card:#fff;--line:#deded8;--accent:#0b6e4f}
 @media (prefers-color-scheme:dark){:root{--bg:#141413;--fg:#ecebe6;--muted:#a3a29b;--card:#1e1e1c;--line:#34342f;--accent:#4fc59a}}
 body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.55 system-ui,sans-serif}main{max-width:760px;margin:0 auto;padding:32px 16px}
 pre{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:14px;white-space:pre-wrap;word-break:break-all}
-.warn{border-left:4px solid var(--accent);padding:8px 12px;background:var(--card)}a{color:var(--accent)}</style></head>
-<body><main><h1>${escapeHtml(title)}</h1>
-<p>Participante <code>${escapeHtml(participant.display_name)}</code> (${escapeHtml(participant.kind)}).</p>
-<p class="warn">Este token aparece <strong>só agora</strong>. Guarde-o como senha. Ele autentica você no MCP do coordenador; sozinho não escreve em nenhum repositório GitHub; o credential helper usa-o para obter o token do seu repositório de trabalho.</p>
-<h2>Conectar o Claude Code</h2><pre>${escapeHtml(cmd)}</pre>
-<p>Depois, no Claude Code: <em>"use o MCP gta6: whoami, set_profile e claim_next_task"</em>. Veja o <a href="/onboarding.html">onboarding</a>.</p>
-</main></body></html>`;
+.warn{border-left:4px solid var(--accent);padding:8px 12px;background:var(--card)}a{color:var(--accent)}`;
+
+const PAGE_HEADERS = {
+  'content-type': 'text/html; charset=utf-8',
+  'cache-control': 'no-store',
+  'content-security-policy': "default-src 'none'; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'",
+  'referrer-policy': 'no-referrer',
+};
+
+function page(title, body) {
+  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex"><title>${escapeHtml(title)}</title><style>${PAGE_STYLE}</style></head>
+<body><main><h1>${escapeHtml(title)}</h1>${body}</main></body></html>`;
+}
+
+export function tokenPage({ title, participant, token, mcp }) {
+  const cmd = `claude mcp add --transport http gta6 ${mcp} --header "Authorization: Bearer ${token}"`;
+  return page(title, `<p>Participant <code>${escapeHtml(participant.display_name)}</code> (${escapeHtml(participant.kind)}).</p>
+<p class="warn">This token is shown <strong>only now</strong>. Keep it like a password. It signs you in to the coordinator MCP; on its own it cannot write to any GitHub repository (the credential helper uses it to get a token for your work repository).</p>
+<h2>Connect Claude Code</h2><pre>${escapeHtml(cmd)}</pre>
+<p>Then ask Claude Code: <em>"use the gta6 MCP: whoami, set_profile and claim_next_task"</em>. See the <a href="/onboarding.html">onboarding guide</a>.</p>`);
+}
+
+export function errorPage(message) {
+  return page('Sign-in did not complete', `<p>${escapeHtml(message)}</p><p>Try again from your terminal: ask your agent for a new <code>google_link_url</code> (<code>whoami</code>).</p>`);
+}
+
+export function signedInUrl(env) {
+  return env.SIGNED_IN_URL || `${String(env.PUBLIC_BASE_URL ?? '').replace(/\/$/, '')}/`;
 }
 
 async function forward(env, request, path, init) {
@@ -86,27 +104,42 @@ export default {
       }
 
       if (pathname === '/auth/google/start' && request.method === 'GET') {
-        return Response.redirect(await startLogin(env), 302);
+        return Response.redirect(await startLogin(env, { link: url.searchParams.get('link') }), 302);
       }
 
       if (pathname === '/auth/google/callback' && request.method === 'GET') {
-        if (url.searchParams.get('error')) throw new AppError('oauth_denied', 'Google login was cancelled or denied', 400);
-        const claims = await finishLogin(env, { code: url.searchParams.get('code'), state: url.searchParams.get('state') });
-        const res = await forward(env, request, '/internal/google-login', {
-          method: 'POST',
-          headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({ claims }),
-        });
-        if (!res.ok) return res;
-        const out = await res.json();
-        return new Response(tokenPage({ title: 'Login Google concluído', participant: out.participant, token: out.token, mcp: mcpUrl(env, request) }), {
-          headers: {
-            'content-type': 'text/html; charset=utf-8',
-            'cache-control': 'no-store',
-            'content-security-policy': "default-src 'none'; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'",
-            'referrer-policy': 'no-referrer',
-          },
-        });
+        try {
+          if (url.searchParams.get('error')) throw new AppError('oauth_denied', 'Google sign-in was cancelled or denied.', 400);
+          const { claims, link } = await finishLogin(env, { code: url.searchParams.get('code'), state: url.searchParams.get('state') });
+          if (link) {
+            // Upgrade the SAME anonymous participant (same bearer token); nothing secret is shown in the browser.
+            const res = await forward(env, request, '/internal/google-link', {
+              method: 'POST',
+              headers: { 'content-type': 'application/json' },
+              body: JSON.stringify({ code: link, claims }),
+            });
+            if (!res.ok) {
+              const err = await res.json().catch(() => ({}));
+              return new Response(errorPage(err.error?.message ?? 'Sign-in failed.'), { status: res.status, headers: PAGE_HEADERS });
+            }
+            return new Response(null, { status: 302, headers: { location: signedInUrl(env), 'cache-control': 'no-store', 'referrer-policy': 'no-referrer' } });
+          }
+          const res = await forward(env, request, '/internal/google-login', {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify({ claims }),
+          });
+          if (!res.ok) {
+            const err = await res.json().catch(() => ({}));
+            return new Response(errorPage(err.error?.message ?? 'Sign-in failed.'), { status: res.status, headers: PAGE_HEADERS });
+          }
+          const out = await res.json();
+          return new Response(tokenPage({ title: 'Signed in with Google', participant: out.participant, token: out.token, mcp: mcpUrl(env, request) }), { headers: PAGE_HEADERS });
+        } catch (err) {
+          const message = err instanceof AppError && err.status < 500 ? 'The sign-in request expired or is invalid.' : 'Sign-in failed on our side.';
+          if (!(err instanceof AppError)) console.error('google_callback_failed', String(err?.message ?? err).slice(0, 300));
+          return new Response(errorPage(err?.code === 'oauth_denied' ? err.message : message), { status: err instanceof AppError ? err.status : 500, headers: PAGE_HEADERS });
+        }
       }
 
       if (pathname === '/mcp') {

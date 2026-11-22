@@ -2,7 +2,7 @@
 // The public Worker (src/worker.js) handles static assets and Google OAuth, then forwards here.
 import { AppError, errorResponse, json } from './util.js';
 import { migrate } from './store/migrations.js';
-import { checkRateLimit, createAnonymous, loginGoogle } from './services/auth.js';
+import { checkRateLimit, createAnonymous, linkGoogle, loginGoogle } from './services/auth.js';
 import { syncCatalog } from './services/catalog.js';
 import { publicCatalog, reservationPolicy } from './services/scheduler.js';
 import { markMerged, reportCi } from './services/review.js';
@@ -97,6 +97,11 @@ export function createApp({ store, env, now = () => Date.now(), gitWrite = new P
         const body = await readJson(request);
         const { participant, token } = await loginGoogle(ctx, body.claims);
         return json({ participant: { id: participant.id, kind: participant.kind, display_name: participant.display_name }, token });
+      }
+      if (pathname === '/internal/google-link' && request.method === 'POST') {
+        const body = await readJson(request);
+        const participant = await linkGoogle(ctx, body.code, body.claims);
+        return json({ participant: { id: participant.id, kind: participant.kind, display_name: participant.display_name } });
       }
       if (pathname === '/internal/sync' && request.method === 'POST') return json(await sync());
       if (pathname === '/internal/reconcile' && request.method === 'POST') return json({ results: await reconcileWorkspaces(ctx) });

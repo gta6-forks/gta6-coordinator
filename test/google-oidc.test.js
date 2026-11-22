@@ -91,7 +91,8 @@ test('callback consumes state once and exchanges the code with the secret server
     if (String(u).includes('oauth2.googleapis.com/token')) return new Response(JSON.stringify({ id_token: idToken }));
     return new Response(JSON.stringify(jwks));
   };
-  const claims = await finishLogin(e, { code: 'abc', state }, { fetchImpl, now: () => nowMs });
+  const { claims, link } = await finishLogin(e, { code: 'abc', state }, { fetchImpl, now: () => nowMs });
+  assert.equal(link, null);
   assert.equal(claims.email, 'p@example.test');
   const tokenCall = calls.find((c) => c.u.includes('/token'));
   assert.match(tokenCall.body, /code_verifier=/);

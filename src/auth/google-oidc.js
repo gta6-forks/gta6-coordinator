@@ -19,12 +19,12 @@ export function redirectUri(env) {
 }
 
 /** Creates state + PKCE verifier + nonce, stores them in KV (TTL 10 min) and returns the Google URL. */
-export async function startLogin(env) {
+export async function startLogin(env, { link = null } = {}) {
   if (!googleConfigured(env)) throw new AppError('google_not_configured', 'Google OAuth is not configured on this deployment', 503);
   const state = randomToken(24);
   const verifier = randomToken(48);
   const nonce = randomToken(24);
-  await env.OAUTH_KV.put(`oauth_state:${state}`, JSON.stringify({ verifier, nonce, created_at: Date.now() }), {
+  await env.OAUTH_KV.put(`oauth_state:${state}`, JSON.stringify({ verifier, nonce, link: /^[A-Za-z0-9_-]{20,64}$/.test(link ?? '') ? link : null, created_at: Date.now() }), {
     expirationTtl: STATE_TTL_SECONDS,
   });
   const url = new URL(GOOGLE_AUTH_URL);
@@ -40,7 +40,7 @@ export async function startLogin(env) {
   return url.toString();
 }
 
-/** Validates state (single use), exchanges the code and verifies the ID token. Returns verified claims. */
+/** Validates state (single use), exchanges the code and verifies the ID token. Returns { claims, link }. */
 export async function finishLogin(env, { code, state }, { fetchImpl = fetch, now = Date.now } = {}) {
   if (!googleConfigured(env)) throw new AppError('google_not_configured', 'Google OAuth is not configured on this deployment', 503);
   if (!code || !state) throw new AppError('oauth_bad_request', 'missing code or state', 400);
@@ -64,7 +64,8 @@ export async function finishLogin(env, { code, state }, { fetchImpl = fetch, now
   if (!res.ok) throw new AppError('oauth_exchange_failed', `token endpoint returned ${res.status}`, 502);
   const body = await res.json();
   if (!body.id_token) throw new AppError('oauth_exchange_failed', 'no id_token in response', 502);
-  return verifyIdToken(env, body.id_token, { nonce: saved.nonce, fetchImpl, now });
+  const claims = await verifyIdToken(env, body.id_token, { nonce: saved.nonce, fetchImpl, now });
+  return { claims, link: saved.link ?? null };
 }
 
 async function loadJwks(env, fetchImpl, { force = false } = {}) {

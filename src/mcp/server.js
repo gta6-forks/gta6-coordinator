@@ -1,7 +1,8 @@
 // MCP over Streamable HTTP (JSON responses, no server-initiated streams), JSON-RPC 2.0.
 // Auth: `Authorization: Bearer g6a_…|g6g_…` issued by /auth/anonymous or the Google OIDC flow.
 import { AppError, assertNoSecrets } from '../util.js';
-import { authenticate, setProfile } from '../services/auth.js';
+import { authenticate, createGoogleLink, setProfile } from '../services/auth.js';
+import { googleConfigured } from '../auth/google-oidc.js';
 import { claim, currentReservation, listTasks, publicTask, release } from '../services/scheduler.js';
 import { getTask } from '../services/catalog.js';
 import { submitCompletion, submitVerification } from '../services/review.js';
@@ -35,13 +36,22 @@ const strip = ({ $schema, $id, title, $defs, ...rest }) => ({ ...rest, ...($defs
 export const TOOLS = [
   {
     name: 'whoami',
-    description: 'Shows your participant id, login kind (google = strategic+operational, anonymous = operational only), profile and current reservation.',
+    description: 'Shows your participant id, login kind (google = strategic+operational, anonymous = operational only), profile and current reservation. Anonymous participants also get google_link_url: a one-time link that upgrades this same key to Google.',
     inputSchema: { type: 'object', properties: {}, additionalProperties: false },
-    run: (ctx, p) => ({
-      participant: { id: p.id, kind: p.kind, display_name: p.display_name, profile: p.profile },
-      reservation: currentReservation(ctx, p),
-      workspace: myWorkspace(ctx, p),
-    }),
+    run: async (ctx, p) => {
+      const out = {
+        participant: { id: p.id, kind: p.kind, display_name: p.display_name, profile: p.profile },
+        reservation: currentReservation(ctx, p),
+        workspace: myWorkspace(ctx, p),
+      };
+      if (p.kind === 'anonymous' && googleConfigured(ctx.env)) {
+        const link = await createGoogleLink(ctx, p);
+        out.google_link_url = `${String(ctx.env.PUBLIC_BASE_URL).replace(/\/$/, '')}/auth/google/start?link=${link.code}`;
+        out.google_link_expires_at = link.expires_at;
+        out.google_link_note = 'Open this link in a browser and sign in with Google: this same key then also gets planning and review tasks. Single use, valid 10 minutes; call whoami again for a new one.';
+      }
+      return out;
+    },
   },
   {
     name: 'set_profile',

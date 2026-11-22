@@ -127,3 +127,49 @@ export function setProfile(ctx, participant, profile) {
   recordEvent(ctx.store, ctx.now(), participant.id, 'participant.profile_set', {});
   return getParticipant(ctx, participant.id);
 }
+
+export const GOOGLE_LINK_TTL_MS = 10 * 60 * 1000;
+
+/** One-time code (10 min) that upgrades THIS anonymous participant to Google; the bearer token stays the same. */
+export async function createGoogleLink(ctx, participant) {
+  if (participant.kind !== 'anonymous') return null;
+  const code = randomToken(24);
+  const now = ctx.now();
+  ctx.store.exec('DELETE FROM google_links WHERE expires_at < ?', now - GOOGLE_LINK_TTL_MS);
+  ctx.store.exec(
+    'INSERT INTO google_links (code_hash, participant_id, created_at, expires_at) VALUES (?, ?, ?, ?)',
+    await sha256Hex(`link:${code}`), participant.id, now, now + GOOGLE_LINK_TTL_MS,
+  );
+  return { code, expires_at: new Date(now + GOOGLE_LINK_TTL_MS).toISOString() };
+}
+
+/** Consumes a link code (single use) and promotes its anonymous participant using verified Google claims. */
+export async function linkGoogle(ctx, code, claims) {
+  if (!claims?.sub || claims.email_verified !== true) throw new AppError('google_claims_invalid', 'verified Google claims required', 401);
+  if (!/^[A-Za-z0-9_-]{20,64}$/.test(code ?? '')) throw new AppError('link_invalid', 'This sign-in link is invalid.', 400);
+  const hash = await sha256Hex(`link:${code}`);
+  return ctx.store.tx(() => {
+    const now = ctx.now();
+    const link = ctx.store.one('SELECT * FROM google_links WHERE code_hash = ?', hash);
+    if (!link || link.used_at || link.expires_at <= now) {
+      throw new AppError('link_expired', 'This sign-in link expired or was already used.', 400);
+    }
+    ctx.store.exec('UPDATE google_links SET used_at = ? WHERE code_hash = ?', now, hash);
+    const row = ctx.store.one('SELECT * FROM participants WHERE id = ?', link.participant_id);
+    if (!row || row.revoked) throw new AppError('participant_revoked', 'This participant was revoked.', 403);
+    if (row.kind === 'google') {
+      if (row.google_sub === claims.sub) return rowToParticipant(row);
+      throw new AppError('already_linked', 'This key is already linked to another Google account.', 409);
+    }
+    const other = ctx.store.one('SELECT id FROM participants WHERE google_sub = ?', claims.sub);
+    if (other) {
+      throw new AppError('google_account_in_use', 'This Google account is already linked to another key. Use that key, or sign in with a different Google account.', 409);
+    }
+    ctx.store.exec(
+      "UPDATE participants SET kind = 'google', google_sub = ?, email = ?, display_name = ? WHERE id = ?",
+      claims.sub, claims.email ?? null, (claims.name || row.display_name || 'google-user').slice(0, 80), row.id,
+    );
+    recordEvent(ctx.store, now, row.id, 'participant.google_linked', {});
+    return rowToParticipant(ctx.store.one('SELECT * FROM participants WHERE id = ?', row.id));
+  });
+}

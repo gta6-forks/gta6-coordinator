@@ -158,6 +158,20 @@ export const MIGRATIONS = [
       )`,
     ],
   },
+  {
+    version: 2,
+    name: 'google_links',
+    statements: [
+      // One-time codes that let an anonymous participant attach a Google identity to the SAME token.
+      `CREATE TABLE google_links (
+        code_hash TEXT PRIMARY KEY,
+        participant_id TEXT NOT NULL REFERENCES participants(id),
+        created_at INTEGER NOT NULL,
+        expires_at INTEGER NOT NULL,
+        used_at INTEGER
+      )`,
+    ],
+  },
 ];
 
 export function migrate(store) {
