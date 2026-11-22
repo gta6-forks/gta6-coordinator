@@ -4,7 +4,7 @@ Coordenador MCP para contribuições distribuídas, feitas com agentes de IA, em
 interoperabilidade: Leonida, Xbox2Windows, ScarlettX, rpf9-explorer e americas-recomp. Roda em **Cloudflare Workers +
 Durable Objects (SQLite) + KV**. Não hospeda nem distribui nada do jogo.
 
-Estado (2026-11-21): **publicado em https://gta6-coordinator.diogopublio.workers.dev** (smoke 24/24 PASS em produção); MCP ponta a ponta,
+Estado (2026-11-21): **publicado em https://mcp.gtaagents.app** (smoke 24/24 PASS em produção); MCP ponta a ponta,
 exercitado pelo Claude Code real como cliente MCP; 82 testes automatizados. Login Google e repositórios de trabalho
 ainda desligados (faltam o cliente OAuth e o GitHub App). Os clones upstream ficam na pasta pai e não são alterados.
 

@@ -77,6 +77,7 @@ function verifyTaskFor(review, target, slot) {
       '',
       'Check out that commit, run the task validation commands and check every acceptance criterion.',
       'Do not take the executor report as proof: reproduce it. Report with `submit_verification`.',
+      'If the other review rejects first, this task stops being handed out, but your verdict is still accepted and added to the re-planning task.',
       '',
       '## Acceptance criteria of the original task',
       ...d.acceptance.map((a) => `- [${a.confidence}] ${a.text}`),
@@ -211,6 +212,32 @@ export function submitCompletion(ctx, participant, { reservation_id, completion,
   });
 }
 
+/** The other review already rejected: keep this verdict as extra feedback for the re-planning task. */
+function lateVerification(ctx, participant, r, task, review, slot, verification) {
+  if (verification.commit_sha !== review.commit_sha) throw new AppError('commit_mismatch', `verify exactly ${review.commit_sha}`, 409);
+  if (review.executor_id === participant.id) throw new AppError('verifier_not_independent', 'executor cannot verify', 403);
+  const now = ctx.now();
+  try {
+    ctx.store.exec(
+      'INSERT INTO verifications (id, review_id, slot, verifier_id, verdict, commit_sha, data_json, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+      randomId('ver_'), review.id, slot, participant.id, verification.verdict, verification.commit_sha, JSON.stringify({ ...verification, after_rejection: true }), now,
+    );
+  } catch (err) {
+    if (/UNIQUE/i.test(String(err.message))) throw new AppError('verifier_not_independent', 'one verifier per review, one verdict per slot', 409);
+    throw err;
+  }
+  ctx.store.exec("UPDATE reservations SET state = 'completed', closed_at = ? WHERE id = ?", now, r.id);
+  ctx.store.exec("UPDATE tasks SET status = 'done', updated_at = ? WHERE id = ?", now, task.id);
+  const planId = `local:plan/replan/${review.id}`;
+  const plan = getTask(ctx.store, planId);
+  if (plan) {
+    const data = { ...plan.data, instructions_md: `${plan.data.instructions_md}\n\n### Review ${slot} (${verification.verdict}, submitted after the rejection)\n\n${verification.feedback_md}` };
+    ctx.store.exec('UPDATE tasks SET data_json = ?, updated_at = ? WHERE id = ?', JSON.stringify(data), now, planId);
+  }
+  recordEvent(ctx.store, now, participant.id, 'verification.after_rejection', { review_id: review.id, slot, verdict: verification.verdict });
+  return { status: 'recorded_as_feedback', review_id: review.id, replan_task: plan ? planId : null, note: 'The other review had already rejected this delivery; your verdict was added to the re-planning task.' };
+}
+
 function rejectReview(ctx, review, feedback) {
   const now = ctx.now();
   ctx.store.exec("UPDATE reviews SET state = 'changes_requested', updated_at = ? WHERE id = ?", now, review.id);
@@ -218,8 +245,9 @@ function rejectReview(ctx, review, feedback) {
     const vid = `local:verify/${review.id}/${s}`;
     const vt = getTask(ctx.store, vid);
     if (vt && vt.status === 'open') {
+      // Not handed out any more. A reviewer already working on it keeps the reservation: their verdict is still
+      // recorded and added to the re-planning task as extra feedback (submitVerification).
       ctx.store.exec("UPDATE tasks SET status = 'cancelled', updated_at = ? WHERE id = ?", now, vid);
-      ctx.store.exec("UPDATE reservations SET state = 'cancelled', closed_at = ? WHERE task_id = ? AND state = 'active'", now, vid);
     }
   }
   ctx.store.exec("UPDATE tasks SET status = 'needs_replan', updated_at = ? WHERE id = ?", now, review.task_id);
@@ -264,6 +292,7 @@ export async function submitVerification(ctx, participant, { reservation_id, ver
       if (errors.length) throw new AppError('invalid_verification', 'verification does not match schema', 400, { errors });
       const { review_id: reviewId, slot } = task.data.review;
       const review = ctx.store.one('SELECT * FROM reviews WHERE id = ?', reviewId);
+      if (review?.state === 'changes_requested') return lateVerification(ctx, participant, r, task, review, slot, verification);
       if (!review || review.state !== 'verifying') throw new AppError('review_not_open', `review is ${review?.state ?? 'missing'}`, 409);
       if (verification.commit_sha !== review.commit_sha) {
         throw new AppError('commit_mismatch', `verify exactly ${review.commit_sha}; a new commit needs a new completion`, 409);

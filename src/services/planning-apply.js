@@ -93,7 +93,7 @@ export async function applyPlanningPr(ctx, planner, pr) {
       results.push({ proposal_id: proposal.id, status: 'already_applied' });
       continue;
     }
-    const check = validateProposal(proposal, catalogSnapshot(ctx.store));
+    const check = validateProposal(proposal, catalogSnapshot(ctx.store, ctx.env));
     if (!check.valid) {
       recordEvent(ctx.store, ctx.now(), 'planner', 'planning.apply_rejected', { proposal_id: proposal.id, pr: pr.url, errors: check.errors.slice(0, 20) });
       results.push({ proposal_id: proposal.id, status: 'invalid', errors: check.errors });

@@ -111,3 +111,15 @@ test('invalid proposals and protected-objective changes are not applied', async 
   assert.deepEqual(out.results.map((x) => x.status), ['invalid', 'needs_owner_authorization']);
   assert.equal(planner.issues.length, 0);
 });
+
+test('validator: upstream repo -> warning naming the fork; repo without a fork -> error', async () => {
+  const { ctx } = await world([]);
+  const { validateProposal, catalogSnapshot } = await import('../src/services/planning.js');
+  const p = proposal();
+  const ok = validateProposal(p, catalogSnapshot(ctx.store, ctx.env));
+  assert.equal(ok.valid, true);
+  assert.ok(ok.warnings.some((w) => /use gta6-forks\/rpf9-explorer/.test(w)));
+  const bad = structuredClone(p);
+  bad.operations[0].repo = 'someone/elsewhere';
+  assert.ok(validateProposal(bad, catalogSnapshot(ctx.store, ctx.env)).errors.some((e) => /has no main fork/.test(e)));
+});

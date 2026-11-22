@@ -38,6 +38,11 @@ export function validateProposal(proposal, catalog) {
         });
         for (const e of taskErrors) errors.push(`${at}.task${e.slice(1)}`);
         if (op.replaces_draft && !byId.has(op.replaces_draft)) errors.push(`${at}.replaces_draft: unknown ${op.replaces_draft}`);
+        if (catalog.forks?.length && !catalog.forks.includes(op.repo)) {
+          const fork = catalog.forks.find((x) => x.split('/')[1] === op.repo.split('/')[1]);
+          if (fork) warnings.push(`${at}.repo: issues are created in the main fork; use ${fork} (${op.repo} is mapped to it)`);
+          else errors.push(`${at}.repo: ${op.repo} has no main fork here; use one of ${catalog.forks.join(', ')}`);
+        }
         created.set(op.ref, { id: op.ref, depends_on: [...(op.task.depends_on ?? [])], kind: op.task.kind ?? 'issue', executable: op.task.kind !== 'group' });
         break;
       }
@@ -89,8 +94,9 @@ export function validateProposal(proposal, catalog) {
   return { valid: errors.length === 0, errors, warnings, requires_human_authorization: requiresHuman, summary: counts };
 }
 
-export function catalogSnapshot(store) {
+export function catalogSnapshot(store, env = null) {
   return {
+    forks: env ? String(env.TASK_REPOS ?? '').split(',').map((s) => s.trim()).filter(Boolean) : null,
     tasks: loadTasks(store).map((t) => ({
       id: t.id,
       depends_on: t.data.depends_on,
@@ -108,7 +114,7 @@ function requireStrategic(participant) {
 
 export function submitProposal(ctx, participant, proposal) {
   requireStrategic(participant);
-  const result = validateProposal(proposal, catalogSnapshot(ctx.store));
+  const result = validateProposal(proposal, catalogSnapshot(ctx.store, ctx.env));
   const now = ctx.now();
   if (result.valid) {
     const existing = ctx.store.one('SELECT participant_id FROM proposals WHERE id = ?', proposal.id);

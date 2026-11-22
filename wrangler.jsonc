@@ -42,8 +42,10 @@
   "env": {
     "production": {
       "name": "gta6-coordinator",
+      "workers_dev": false,
+      "routes": [{ "pattern": "mcp.gtaagents.app", "custom_domain": true }],
       "vars": {
-        "PUBLIC_BASE_URL": "https://gta6-coordinator.diogopublio.workers.dev",
+        "PUBLIC_BASE_URL": "https://mcp.gtaagents.app",
         "ALLOWED_ORIGINS": "",
         "RESERVATION_TTL_HOURS": "24",
         "RECLAIM_COOLDOWN_HOURS": "72",
@@ -52,7 +54,7 @@
         "TASK_REPOS": "gta6-forks/Leonida,gta6-forks/Xbox2Windows,gta6-forks/ScarlettX,gta6-forks/rpf9-explorer,gta6-forks/americas-recomp",
         "COORDINATOR_REPO": "gta6-forks/gta6-coordinator",
         "GOOGLE_ALLOWED_DOMAIN": "",
-        "SIGNED_IN_URL": "https://gta6-explorer-landing.diogopublio.workers.dev/signed-in",
+        "SIGNED_IN_URL": "https://gtaagents.app/signed-in",
         "WORKSPACE_PROVISIONER": "github-app",
         "WORKSPACE_ORG": "gta6-work",
         "WORKSPACE_ANCHOR_REPO": "_anchor",

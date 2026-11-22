@@ -89,7 +89,7 @@ test('CI success before the verifications still requires both approvals', async 
   assert.equal(out.merge.status, 'pending_decision');
 });
 
-test('a rejection cancels the other slot, marks the task needs_replan and feeds a planner task', async () => {
+test('a rejection stops handing out the other slot, marks the task needs_replan and feeds a planner task', async () => {
   const { ctx, done } = await inReview();
   const [v1, v2, planner] = [await google(ctx), await google(ctx), await google(ctx)];
   const r2 = claim(ctx, v2.participant, { task_id: done.verification_tasks[1] });
@@ -100,13 +100,20 @@ test('a rejection cancels the other slot, marks the task needs_replan and feeds 
   });
   assert.equal(out.status, 'changes_requested');
   assert.equal(getTask(ctx.store, done.verification_tasks[1]).status, 'cancelled');
-  assert.equal(ctx.store.one('SELECT state FROM reservations WHERE id = ?', r2.reservation.id).state, 'cancelled');
+  assert.equal(ctx.store.one('SELECT state FROM reservations WHERE id = ?', r2.reservation.id).state, 'active', 'work in progress is not thrown away');
   assert.equal(getTask(ctx.store, 'R0Y00/Xbox2Windows#77').status, 'needs_replan');
   const plan = getTask(ctx.store, out.replan_task);
   assert.match(plan.data.instructions_md, /não falha antes/);
   const anonP = await anon(ctx);
   assert.throws(() => claim(ctx, anonP.participant, { task_id: out.replan_task }), /cannot be reserved/);
   assert.equal(claim(ctx, planner.participant, { task_id: out.replan_task }).status, 'reserved');
+  const late = await submitVerification(ctx, v2.participant, {
+    reservation_id: r2.reservation.id,
+    verification: verification({ verdict: 'reject', feedback_md: 'Second reviewer: also missing a regression test.' }),
+  });
+  assert.equal(late.status, 'recorded_as_feedback');
+  assert.match(getTask(ctx.store, out.replan_task).data.instructions_md, /Second reviewer/);
+  assert.equal(ctx.store.one('SELECT state FROM reservations WHERE id = ?', r2.reservation.id).state, 'completed');
 });
 
 test('CI failure also sends the delivery back to planning', async () => {
