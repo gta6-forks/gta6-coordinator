@@ -10,7 +10,7 @@ import { getTask, syncCatalog } from '../src/services/catalog.js';
 import { verifySignature } from '../src/github/webhooks.js';
 import { handleRpc } from '../src/mcp/server.js';
 import { findSecretLikeFields } from '../src/util.js';
-import { scanChanges } from '../tools/integrate-workspace.mjs';
+import { redact, scanChanges } from '../tools/integrate-workspace.mjs';
 import { anon, baseEnv, clock, completion, createNodeStore, google, HOUR, task } from './helpers.js';
 
 class FakeProvisioner {
@@ -258,4 +258,6 @@ test('integrator content scan blocks game data, workflow edits and large files',
   assert.equal(scanChanges([{ path: '.github/workflows/x.yml', size: 10 }]).length, 1);
   assert.equal(scanChanges([{ path: 'big.bin', size: 6 * 1024 * 1024 }]).length, 1);
   assert.equal(scanChanges([{ path: 'game-files/a.txt', size: 1 }]).length, 1);
+  const leaked = redact('git -c http.extraheader=AUTHORIZATION: basic eC1hY2Nlc3M6Z2hzXzE= failed; token ghs_abcDEF123');
+  assert.ok(!/eC1hY2Nl|ghs_abc/.test(leaked), 'integrator errors never carry tokens');
 });

@@ -28,6 +28,8 @@ export function scanChanges(changes) {
   return violations;
 }
 
+export const redact = (s) => String(s).replace(/(basic|bearer|token)\s+[A-Za-z0-9+\/=._-]+/gi, '$1 ***').replace(/gh[pousr]_[A-Za-z0-9_]+/g, '***');
+
 // One header per remote URL, so each token is only ever sent to its own repository.
 function git(cwd, args, auth = {}) {
   const cfg = [];
@@ -35,7 +37,13 @@ function git(cwd, args, auth = {}) {
     const b = Buffer.from(`x-access-token:${token}`).toString('base64');
     cfg.push('-c', `http.https://github.com/${repo}.git.extraheader=AUTHORIZATION: basic ${b}`);
   }
-  return execFileSync('git', [...cfg, ...args], { cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim();
+  try {
+    return execFileSync('git', [...cfg, ...args], { cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim();
+  } catch (err) {
+    // Never let the auth headers (they carry tokens) reach logs or the coordinator callback.
+    const stderr = redact(String(err.stderr ?? '')).trim().slice(0, 300);
+    throw new Error(`git ${args[0]} failed (exit ${err.status}): ${stderr}`);
+  }
 }
 
 function appJwt() {
@@ -76,10 +84,10 @@ async function main() {
   git(dir, ['init', '-q']);
   git(dir, ['remote', 'add', 'integration', `https://github.com/${p.integration_repo}.git`]);
   git(dir, ['remote', 'add', 'work', `https://github.com/${p.workspace_repo}.git`]);
-  git(dir, ['fetch', '-q', 'integration', `+refs/heads/${p.task_branch}:refs/remotes/integration/task`], auth);
+  git(dir, ['fetch', '-q', 'integration', `+refs/heads/${p.task_branch}:refs/gta6/base`], auth);
   git(dir, ['fetch', '-q', 'work', p.head_sha], auth);
 
-  const base = git(dir, ['rev-parse', 'refs/remotes/integration/task']);
+  const base = git(dir, ['rev-parse', 'refs/gta6/base']);
   try {
     git(dir, ['merge-base', '--is-ancestor', base, p.head_sha]);
   } catch {
@@ -116,10 +124,10 @@ async function main() {
 
 if (import.meta.url === `file://${process.argv[1]}`) {
   main().catch(async (err) => {
-    console.error(err.message);
+    console.error(redact(err.message));
     try {
       const p = JSON.parse(process.env.P ?? '{}');
-      if (p.workspace_id) await callback({ workspace_id: p.workspace_id, outcome: 'error', detail: err.message.slice(0, 500) });
+      if (p.workspace_id) await callback({ workspace_id: p.workspace_id, outcome: 'error', detail: redact(err.message).slice(0, 500) });
     } catch {}
     process.exit(1);
   });

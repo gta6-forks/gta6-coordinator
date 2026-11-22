@@ -132,8 +132,9 @@ trabalho é dedicada (só repositórios de trabalho + `_anchor`), então a insta
 isolamento continua no token, que sempre nomeia um único repositório. Os forks principais ficam em outra instalação.
 
 **2026-11-21, mesma org, instalação "All repositories": V-1, V-2, V-3, V-4, V-5, V-6 e V-8 PASS** (5 repositórios em
-18,8 s com 1 s de intervalo, sem limite secundário). V-7 (integrador no Actions) fica para quando existirem o
-repositório coordenador e os forks principais. Webhook do App verificado: entrega com 200 depois de sincronizar
+18,8 s com 1 s de intervalo, sem limite secundário). **V-7 PASS** (2026-11-21, `tools/integrate-workspace.mjs` contra `gta6-work` → `gta6-forks/rpf9-explorer`: mesmo SHA na
+branch de tarefa, PR aberto e depois fechado). Corrigidos no caminho: colisão de ref local com branches `task/*` e
+vazamento do cabeçalho de autenticação em mensagens de erro do git. Webhook do App verificado: entrega com 200 depois de sincronizar
 `GITHUB_WEBHOOK_SECRET`.
 
 Regra de implementação: **nenhum token com escrita cobre mais de um repositório** (`GitHubAppClient` recusa). O
