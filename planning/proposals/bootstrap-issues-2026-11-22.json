@@ -1,0 +1,209 @@
+{
+  "schema_version": 1,
+  "id": "bootstrap-issues-2026-11-22",
+  "based_on": { "roadmap_version": 1, "snapshot_at": "2026-11-22T02:24:02.401Z" },
+  "rationale_md": "Initial planning pass for M1-entrada.\n\n- Every `draft:*` task is promoted to a concrete issue via `replaces_draft`.\n- The ScarlettX failing-tests group keeps its two sub-issues.\n- `draft:realdody/americas-recomp/xgameruntime-standin` becomes a grouping issue with three small sub-issues (coverage table first, then XTaskQueue and offline XUser).\n- Acceptance criteria are defined for `R0Y00/Xbox2Windows#126`, which moves from `needs_info` to `ready`.\n- One extra small test task is added for the Xbox2Windows PE loader.\n\nNo operation touches the protected objective.",
+  "operations": [
+    {
+      "op": "create_issue",
+      "ref": "new:leonida-system-values",
+      "repo": "ItsNotRexed/Leonida",
+      "replaces_draft": "draft:ItsNotRexed/Leonida/system-values",
+      "title": "Document per-stage system value layout (compute, mesh, geometry)",
+      "body_md": "Document the register/semantic layout of system values for the compute, mesh and geometry stages, with evidence.\n\n## Acceptance criteria\n- A Markdown table per stage lists each system value, its register and component mask.\n- Each entry cites its evidence (disassembly or hardware capture); unverified entries are explicitly marked.\n- No proprietary shader binaries or game data are committed.",
+      "task": {
+        "kind": "issue", "role": "execute", "type": "operational", "priority": "p1", "difficulty": "high", "milestone": "M2-shaders", "readiness": "ready",
+        "instructions_md": "Document the register/semantic layout of system values for the compute, mesh and geometry stages, with evidence.",
+        "requirements": { "implementation": { "required": [], "optional": [], "suggested": [] }, "validation": { "required": [], "optional": [], "suggested": [] } },
+        "acceptance": [
+          { "text": "A Markdown table per stage lists each system value, its register and component mask.", "source": "local:plan/bootstrap-issues", "confidence": "confirmed" },
+          { "text": "Each entry cites its evidence; unverified entries are explicitly marked.", "source": "local:plan/bootstrap-issues", "confidence": "confirmed" },
+          { "text": "No proprietary shader binaries or game data are committed.", "source": "local:plan/bootstrap-issues", "confidence": "confirmed" }
+        ],
+        "deliverables": ["knowledge_md"]
+      }
+    },
+    {
+      "op": "create_issue",
+      "ref": "new:scarlettx-failing-tests",
+      "repo": "Freminet/ScarlettX",
+      "replaces_draft": "draft:Freminet/ScarlettX/failing-tests",
+      "title": "Group: fix the 3 failing ScarlettX tests",
+      "body_md": "Grouping issue tracking the currently failing ScarlettX tests.\n\n## Acceptance criteria\n- All child issues are closed.\n- The full ScarlettX test suite passes on CI.",
+      "task": {
+        "kind": "group", "role": "execute", "type": "operational", "priority": "p1", "difficulty": "medium", "milestone": "M1-entrada", "readiness": "ready",
+        "instructions_md": "Grouping issue; close when all child issues are closed and the suite passes.",
+        "requirements": { "implementation": { "required": [], "optional": [], "suggested": [] }, "validation": { "required": [], "optional": [], "suggested": [] } },
+        "acceptance": [
+          { "text": "All child issues are closed and the full ScarlettX test suite passes on CI.", "source": "local:plan/bootstrap-issues", "confidence": "confirmed" }
+        ],
+        "deliverables": ["tests"]
+      }
+    },
+    {
+      "op": "create_issue",
+      "ref": "new:scarlettx-guest-texture-upload",
+      "repo": "Freminet/ScarlettX",
+      "replaces_draft": "draft:Freminet/ScarlettX/guest-texture-upload",
+      "title": "Fix guest texture upload lagging one frame (test_d3d12_guest_texture)",
+      "body_md": "Guest texture uploads become visible one frame late. Make the upload visible in the frame it is submitted.\n\n## Acceptance criteria\n- test_d3d12_guest_texture passes.\n- A regression test asserts the uploaded texel is readable in the same frame.\n- No other test regresses.",
+      "task": {
+        "kind": "subissue", "parent": "draft:Freminet/ScarlettX/failing-tests", "role": "execute", "type": "operational", "priority": "p1", "difficulty": "medium", "milestone": "M1-entrada", "readiness": "ready",
+        "instructions_md": "Make guest texture uploads visible in the same frame they are submitted.",
+        "requirements": { "implementation": { "required": [], "optional": [], "suggested": [] }, "validation": { "required": [], "optional": [], "suggested": [] } },
+        "acceptance": [
+          { "text": "test_d3d12_guest_texture passes and a same-frame regression test is added.", "source": "local:plan/bootstrap-issues", "confidence": "confirmed" },
+          { "text": "No other test regresses.", "source": "local:plan/bootstrap-issues", "confidence": "confirmed" }
+        ],
+        "deliverables": ["code", "tests"]
+      }
+    },
+    {
+      "op": "create_issue",
+      "ref": "new:scarlettx-child-process-boot",
+      "repo": "Freminet/ScarlettX",
+      "replaces_draft": "draft:Freminet/ScarlettX/child-process-boot",
+      "title": "Child-process boot must not load xgameruntime.dll from System32",
+      "body_md": "When booting in a child process, the loader resolves xgameruntime.dll from System32 instead of the bundled stand-in. Fix the DLL search order.\n\n## Acceptance criteria\n- The child-process boot test passes.\n- A test verifies the loaded xgameruntime.dll path is the stand-in, not System32.",
+      "task": {
+        "kind": "subissue", "parent": "draft:Freminet/ScarlettX/failing-tests", "role": "execute", "type": "operational", "priority": "p1", "difficulty": "low", "milestone": "M1-entrada", "readiness": "ready",
+        "instructions_md": "Fix the DLL search order so child-process boot loads the stand-in xgameruntime.dll.",
+        "requirements": { "implementation": { "required": [], "optional": [], "suggested": [] }, "validation": { "required": [], "optional": [], "suggested": [] } },
+        "acceptance": [
+          { "text": "The child-process boot test passes and asserts the stand-in DLL path is used.", "source": "local:plan/bootstrap-issues", "confidence": "confirmed" }
+        ],
+        "deliverables": ["code", "tests"]
+      }
+    },
+    {
+      "op": "create_issue",
+      "ref": "new:rpf9-bcpack-decoder",
+      "repo": "breadbbbb/rpf9-explorer",
+      "replaces_draft": "draft:breadbbbb/rpf9-explorer/bcpack-decoder",
+      "title": "Implement Xbox BCPack texture decoder",
+      "body_md": "Add a BCPack decoder that outputs standard BCn blocks, tested only with synthetic fixtures.\n\n## Acceptance criteria\n- Decoder converts BCPack streams to BCn blocks byte-exactly for the committed synthetic fixtures.\n- Unit tests cover malformed/truncated input without panics.\n- No game textures are committed.",
+      "task": {
+        "kind": "issue", "role": "execute", "type": "operational", "priority": "p2", "difficulty": "high", "milestone": "M3-assets", "readiness": "ready",
+        "instructions_md": "Implement a BCPack-to-BCn decoder with synthetic test fixtures only.",
+        "requirements": { "implementation": { "required": [], "optional": [], "suggested": [] }, "validation": { "required": [], "optional": [], "suggested": [] } },
+        "acceptance": [
+          { "text": "Byte-exact BCn output for committed synthetic fixtures.", "source": "local:plan/bootstrap-issues", "confidence": "confirmed" },
+          { "text": "Malformed/truncated input handled without panics; no game textures committed.", "source": "local:plan/bootstrap-issues", "confidence": "confirmed" }
+        ],
+        "deliverables": ["code", "tests"]
+      }
+    },
+    {
+      "op": "create_issue",
+      "ref": "new:recomp-f16-interpolation",
+      "repo": "realdody/americas-recomp",
+      "replaces_draft": "draft:realdody/americas-recomp/f16-interpolation",
+      "title": "Measure fp16 interpolant rounding and retire XBOX_ALLOW_UNMEASURED_F16_INTERP",
+      "body_md": "Measure fp16 interpolant rounding on hardware, encode it in the recompiler and remove the XBOX_ALLOW_UNMEASURED_F16_INTERP escape hatch.\n\n## Acceptance criteria\n- A Markdown report documents the measurement method and results.\n- The recompiler emits the measured rounding; tests cover denormals and ties.\n- XBOX_ALLOW_UNMEASURED_F16_INTERP is removed.",
+      "task": {
+        "kind": "issue", "role": "execute", "type": "operational", "priority": "p1", "difficulty": "high", "milestone": "M2-shaders", "readiness": "ready",
+        "instructions_md": "Measure fp16 interpolant rounding, implement it, and remove the unmeasured escape hatch.",
+        "requirements": { "implementation": { "required": [], "optional": [], "suggested": [] }, "validation": { "required": [], "optional": [], "suggested": [] } },
+        "acceptance": [
+          { "text": "Measurement report committed as Markdown.", "source": "local:plan/bootstrap-issues", "confidence": "confirmed" },
+          { "text": "Measured rounding implemented with edge-case tests; XBOX_ALLOW_UNMEASURED_F16_INTERP removed.", "source": "local:plan/bootstrap-issues", "confidence": "confirmed" }
+        ],
+        "deliverables": ["code", "tests", "knowledge_md"]
+      }
+    },
+    {
+      "op": "create_issue",
+      "ref": "new:recomp-xgameruntime-group",
+      "repo": "realdody/americas-recomp",
+      "replaces_draft": "draft:realdody/americas-recomp/xgameruntime-standin",
+      "title": "Group: complete the xgameruntime.dll stand-in (48 of 398 methods)",
+      "body_md": "Grouping issue for completing the xgameruntime.dll stand-in, split into small, independently testable child issues.\n\n## Acceptance criteria\n- All child issues are closed.\n- The method coverage table is up to date.",
+      "task": {
+        "kind": "group", "role": "execute", "type": "operational", "priority": "p2", "difficulty": "high", "milestone": "M4-runtime", "readiness": "ready",
+        "instructions_md": "Grouping issue; close when all child issues are closed.",
+        "requirements": { "implementation": { "required": [], "optional": [], "suggested": [] }, "validation": { "required": [], "optional": [], "suggested": [] } },
+        "acceptance": [
+          { "text": "All child issues are closed and the coverage table is up to date.", "source": "local:plan/bootstrap-issues", "confidence": "confirmed" }
+        ],
+        "deliverables": ["knowledge_md"]
+      }
+    },
+    {
+      "op": "create_issue",
+      "ref": "new:recomp-xgameruntime-coverage",
+      "repo": "realdody/americas-recomp",
+      "title": "Generate a method coverage table for the xgameruntime stand-in",
+      "body_md": "Add a script that lists all 398 xgameruntime interface methods and marks each as implemented, stubbed or missing.\n\n## Acceptance criteria\n- The script outputs a Markdown table committed under docs/.\n- A test fails if the table is out of date.",
+      "task": {
+        "kind": "subissue", "parent": "draft:realdody/americas-recomp/xgameruntime-standin", "role": "execute", "type": "operational", "priority": "p2", "difficulty": "low", "milestone": "M4-runtime", "readiness": "ready",
+        "instructions_md": "Write a coverage script and commit its Markdown output.",
+        "requirements": { "implementation": { "required": [], "optional": [], "suggested": [] }, "validation": { "required": [], "optional": [], "suggested": [] } },
+        "acceptance": [
+          { "text": "Coverage table committed under docs/ and checked for staleness by a test.", "source": "local:plan/bootstrap-issues", "confidence": "confirmed" }
+        ],
+        "deliverables": ["code", "knowledge_md"]
+      }
+    },
+    {
+      "op": "create_issue",
+      "ref": "new:recomp-xgameruntime-xtask",
+      "repo": "realdody/americas-recomp",
+      "title": "Implement XTaskQueue methods in the xgameruntime stand-in",
+      "body_md": "Implement the XTaskQueue family (create, dispatch, submit callback, close) in the stand-in.\n\n## Acceptance criteria\n- All XTaskQueue methods are implemented, not stubbed.\n- Unit tests cover manual and thread-pool dispatch modes.",
+      "task": {
+        "kind": "subissue", "parent": "draft:realdody/americas-recomp/xgameruntime-standin", "role": "execute", "type": "operational", "priority": "p2", "difficulty": "medium", "milestone": "M4-runtime", "readiness": "ready",
+        "instructions_md": "Implement XTaskQueue methods with unit tests.",
+        "requirements": { "implementation": { "required": [], "optional": [], "suggested": [] }, "validation": { "required": [], "optional": [], "suggested": [] } },
+        "acceptance": [
+          { "text": "XTaskQueue methods implemented with tests for manual and thread-pool dispatch.", "source": "local:plan/bootstrap-issues", "confidence": "confirmed" }
+        ],
+        "deliverables": ["code", "tests"]
+      }
+    },
+    {
+      "op": "create_issue",
+      "ref": "new:recomp-xgameruntime-xuser",
+      "repo": "realdody/americas-recomp",
+      "title": "Implement offline XUser stubs in the xgameruntime stand-in",
+      "body_md": "Implement the XUser methods needed for one offline local user (add user, get id, gamertag) returning deterministic values.\n\n## Acceptance criteria\n- XUser methods return documented deterministic offline values.\n- Unit tests cover each implemented method.",
+      "task": {
+        "kind": "subissue", "parent": "draft:realdody/americas-recomp/xgameruntime-standin", "role": "execute", "type": "operational", "priority": "p2", "difficulty": "medium", "milestone": "M4-runtime", "readiness": "ready",
+        "instructions_md": "Implement deterministic offline XUser methods with unit tests.",
+        "requirements": { "implementation": { "required": [], "optional": [], "suggested": [] }, "validation": { "required": [], "optional": [], "suggested": [] } },
+        "acceptance": [
+          { "text": "Deterministic offline XUser methods implemented and unit-tested.", "source": "local:plan/bootstrap-issues", "confidence": "confirmed" }
+        ],
+        "deliverables": ["code", "tests"]
+      }
+    },
+    {
+      "op": "create_issue",
+      "ref": "new:x2w-pe-malformed-tests",
+      "repo": "R0Y00/Xbox2Windows",
+      "title": "Add malformed-PE regression tests for pe_map_image",
+      "body_md": "Add small hand-crafted malformed PE fixtures (truncated headers, bad section alignment, empty relocation directory) and assert pe_map_image rejects them cleanly.\n\n## Acceptance criteria\n- At least 5 synthetic malformed PE fixtures are committed (no real game binaries).\n- pe_map_image returns an error and never crashes for each fixture.\n- Tests run in CI.",
+      "task": {
+        "kind": "issue", "role": "execute", "type": "operational", "priority": "p2", "difficulty": "low", "milestone": "M1-entrada", "readiness": "ready",
+        "instructions_md": "Add synthetic malformed-PE fixtures and tests for pe_map_image.",
+        "requirements": { "implementation": { "required": [], "optional": [], "suggested": [] }, "validation": { "required": [], "optional": [], "suggested": [] } },
+        "acceptance": [
+          { "text": "At least 5 synthetic malformed PE fixtures; pe_map_image rejects each without crashing; tests run in CI.", "source": "local:plan/bootstrap-issues", "confidence": "confirmed" }
+        ],
+        "deliverables": ["tests"]
+      }
+    },
+    { "op": "add_subissue", "parent": "new:scarlettx-failing-tests", "child": "new:scarlettx-guest-texture-upload" },
+    { "op": "add_subissue", "parent": "new:scarlettx-failing-tests", "child": "new:scarlettx-child-process-boot" },
+    { "op": "add_subissue", "parent": "new:recomp-xgameruntime-group", "child": "new:recomp-xgameruntime-coverage" },
+    { "op": "add_subissue", "parent": "new:recomp-xgameruntime-group", "child": "new:recomp-xgameruntime-xtask" },
+    { "op": "add_subissue", "parent": "new:recomp-xgameruntime-group", "child": "new:recomp-xgameruntime-xuser" },
+    { "op": "add_dependency", "id": "new:recomp-xgameruntime-xtask", "depends_on": "new:recomp-xgameruntime-coverage" },
+    { "op": "add_dependency", "id": "new:recomp-xgameruntime-xuser", "depends_on": "new:recomp-xgameruntime-coverage" },
+    {
+      "op": "roadmap_change",
+      "milestone": "M1-entrada",
+      "change_md": "Acceptance criteria for R0Y00/Xbox2Windows#126 (decode the XMemAlloc attribute word, Bink and AMD callers):\n- A Markdown document describes every bit field of the XMemAlloc attribute word (bit range, name, observed values), each citing evidence from the Bink and AMD call sites.\n- A decode helper maps an attribute word to a structured value, with unit tests covering every observed caller value.\n- Unknown bits are explicitly flagged as unknown rather than guessed.\n- No proprietary binaries or disassembly dumps are committed."
+    },
+    { "op": "set_readiness", "id": "R0Y00/Xbox2Windows#126", "readiness": "ready" }
+  ]
+}
