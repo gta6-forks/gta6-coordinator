@@ -1,0 +1,131 @@
+{
+  "schema_version": 1,
+  "id": "upstream-cleanup-2026-11-23",
+  "based_on": {
+    "roadmap_version": 1,
+    "snapshot_at": "2026-11-23T06:06:38.502Z"
+  },
+  "rationale_md": "Revised again after review rev_231757a7d6be3cfb: the new task now lists the six real task statuses (ready is a readiness value, not a status), points at src/app.js, and the americas-recomp#4 reason names the right interfaces.\n\nRevised after review rejection (see PR). Change: americas-recomp#3 is closed without a fork rescope, because its remaining 10 methods are exactly the open upstream PR realdody/americas-recomp#63.\n\nUpstream reconciliation (`local:plan/upstream-cleanup`). Each close cites the planner verdict recorded with evidence against the current upstream HEAD (commit, PR or file; never title or keyword). Adds the operational task for the public catalog (status filter on /api/tasks) in gta6-forks/gta6-coordinator.",
+  "operations": [
+    {
+      "op": "close_issue",
+      "id": "R0Y00/Xbox2Windows#77",
+      "reason": "Obsolete (verdict uv_L8hEfo8YvjXA): upstream closed #77 as completed on 2026-11-21 keeping the Windows-compatible behaviour for an empty relocation directory, pinned by PR https://github.com/R0Y00/Xbox2Windows/pull/115 (e44af731); #171 covers the zero-address case. Rejecting the image would contradict upstream."
+    },
+    {
+      "op": "close_issue",
+      "id": "ItsNotRexed/Leonida#29",
+      "reason": "Resolved upstream (verdict uv_aRcOJMyd-gP0): pin bumped in 013d67fd (PR #422, re-pinned in #650) and README/metric updated by PR https://github.com/ItsNotRexed/Leonida/pull/3292 (382,781 models recovered); upstream issue closed as completed."
+    },
+    {
+      "op": "close_issue",
+      "id": "breadbbbb/rpf9-explorer#1",
+      "reason": "Obsolete (verdict uv_429nhxozLAUF): the PR this task validated, https://github.com/breadbbbb/rpf9-explorer/pull/1, was merged by the maintainer (f05d7d93) on 2026-11-21."
+    },
+    {
+      "op": "close_issue",
+      "id": "gta6-forks/ScarlettX#3",
+      "reason": "Obsolete (verdict uv_inWyySahrRFz): upstream commit 2b2810397ce9 \"fix: resolve shim DLLs ahead of System32 for child-process boot\" (Freminet/ScarlettX) fixed it; README Current Limitations now documents the DLL-directory approach."
+    },
+    {
+      "op": "close_issue",
+      "id": "gta6-forks/americas-recomp#4",
+      "reason": "Obsolete (verdict uv_fwU_sIA1Wwc0): realdody/americas-recomp 5c41e6b6 (xbox-series) implements XLaunchUri, XLaunchNewGame and XLaunchRestartOnCrash with test_launch.cpp; xgr_status.json marks XLaunchUri (IXLauncherImpl), XLaunchNewGame and XLaunchRestartOnCrash (IXGameImpl2/3) implemented."
+    },
+    {
+      "op": "close_issue",
+      "id": "gta6-forks/Xbox2Windows#1",
+      "reason": "Obsolete (verdict uv_37hv1PWSPr0m): upstream PR https://github.com/R0Y00/Xbox2Windows/pull/134 (ecb9160e) decodes the full ERA attribute word with tests for 0x05e50000/0xa8004000 and docs in docs/experiments.md; a fork PR would duplicate it."
+    },
+    {
+      "op": "close_issue",
+      "id": "gta6-forks/americas-recomp#3",
+      "reason": "Partially met upstream (verdict uv_9PnP5MZ8aLm-): 5c41e6b6 implemented 13 of the 23 XGameUi methods, and the remaining 10 (IXGameUiImpl2 invite/text entry, IXGameUiImpl3 state share) are the scope of the OPEN upstream PR https://github.com/realdody/americas-recomp/pull/63. No fork task: it would duplicate that PR. Re-plan if #63 is closed without merge or is still an inactive draft after 2026-12-21 (30 days)."
+    },
+    {
+      "op": "create_issue",
+      "ref": "new:coord-tasks-status-filter",
+      "repo": "gta6-forks/gta6-coordinator",
+      "title": "GET /api/tasks: optional status filter and counts by status",
+      "body_md": "`GET /api/tasks` returns every task, including cancelled and done ones, so the landing page and other public consumers miscount open work.\n\n## Acceptance criteria\n- `GET /api/tasks?status=open,in_review` returns only tasks whose `status` is in the comma-separated list; without the parameter the response is unchanged. Accepted statuses (`src/store/migrations.js`): `open, in_review, needs_replan, approved, done, cancelled`. `readiness` (e.g. `ready`) is a different field and is NOT a status.\n- Unknown status values give HTTP 400 with a JSON error naming the invalid value(s) and the accepted ones.\n- The response carries a `counts` object with the number of tasks per status (computed before filtering).\n- Unit tests cover: no filter, one status, several statuses, an unknown status (400) and the counts.\n- `npm test` passes; docs/API or README mention the parameter.\n\n## Restrictions\n- No secrets in code or tests; no change to MCP tools.",
+      "task": {
+        "kind": "issue",
+        "role": "execute",
+        "type": "operational",
+        "priority": "p2",
+        "difficulty": "low",
+        "milestone": "M1-entrada",
+        "readiness": "ready",
+        "instructions_md": "# Status filter for GET /api/tasks\n\nThe route is in `src/app.js` (`/api/tasks`, catalog built by `publicCatalog` in `src/services/scheduler.js`). Accept an optional `status` query parameter (comma-separated). Accepted values are exactly the task statuses `open, in_review, needs_replan, approved, done, cancelled` (`readiness` values such as `ready` are not statuses); unknown -> 400 JSON error. Add `counts` (per status, before filtering). Add tests under `test/` with the existing test style (`node --test`). Run `npm test`.",
+        "requirements": {
+          "implementation": {
+            "required": [
+              {
+                "kind": "tool",
+                "value": "Node.js 20+ and npm",
+                "confidence": "confirmed",
+                "source": "coordinator package.json"
+              },
+              {
+                "kind": "game_files",
+                "value": "no",
+                "confidence": "confirmed",
+                "source": "coordinator code only"
+              }
+            ],
+            "optional": [],
+            "suggested": []
+          },
+          "validation": {
+            "required": [
+              {
+                "kind": "game_files",
+                "value": "no",
+                "confidence": "confirmed",
+                "source": "npm test"
+              }
+            ],
+            "optional": [],
+            "suggested": []
+          }
+        },
+        "acceptance": [
+          {
+            "text": "GET /api/tasks?status=a,b (a,b among open, in_review, needs_replan, approved, done, cancelled) returns only tasks with those statuses; no parameter keeps the current response.",
+            "source": "local:plan/upstream-cleanup",
+            "confidence": "confirmed"
+          },
+          {
+            "text": "Unknown status values give HTTP 400 naming the invalid and the accepted values.",
+            "source": "local:plan/upstream-cleanup",
+            "confidence": "confirmed"
+          },
+          {
+            "text": "Response includes counts per status, computed before filtering.",
+            "source": "local:plan/upstream-cleanup",
+            "confidence": "confirmed"
+          },
+          {
+            "text": "Tests cover no filter, one, several, unknown (400) and counts; npm test passes.",
+            "source": "local:plan/upstream-cleanup",
+            "confidence": "confirmed"
+          }
+        ],
+        "deliverables": [
+          "code",
+          "tests"
+        ],
+        "sources": [
+          {
+            "kind": "coordinator",
+            "ref": "local:plan/upstream-cleanup"
+          }
+        ],
+        "restrictions": [
+          "No secrets in code or tests",
+          "No change to MCP tools"
+        ]
+      }
+    }
+  ]
+}
