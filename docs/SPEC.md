@@ -61,6 +61,10 @@ projetos técnicos abertos: **Leonida**, **Xbox2Windows**, **ScarlettX**, **rpf9
 - **D-INFRA-5** A landing page e o onboarding são servidos por **Workers Static Assets** (`public/`), com CSP em
   `public/_headers`. `public/onboarding.html` é gerado de `docs/ONBOARDING.md` por `npm run build`.
 - **D-INFRA-6** Um Cron Trigger (a cada 30 min) ressincroniza o catálogo a partir da fonte configurada.
+- **D-UPSTREAM-1** (2026-11-22, regra prioritária do proprietário) O planejador reconcilia com os repositórios originais
+  antes de criar, priorizar, distribuir ou reabrir missões: HEAD sha + última checagem por upstream, evidências por tarefa,
+  veredito por critério de aceite, sem fechar tarefas nem tocar reservas automaticamente. Modo padrão `report`;
+  bloquear exige autorização. Detalhes em `docs/UPSTREAM.md`.
 - **D-INFRA-7** Migrations do SQLite são versionadas em `src/store/migrations.js` e aplicadas no construtor do
   Durable Object. A classe é declarada em `wrangler.jsonc` com `new_sqlite_classes`.
 - **D-INFRA-8** Nenhum deploy é feito sem credenciais e autorização do proprietário. `wrangler.jsonc` tem

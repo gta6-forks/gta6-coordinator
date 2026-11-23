@@ -26,7 +26,23 @@ export function loadCatalog() {
   return { tasks, roadmap };
 }
 
-export async function run(argv, env = process.env, log = console.log) {
+/**
+ * The live catalog (GitHub issues of the forks, not only the seed) and the managed forks, from the coordinator's public
+ * API. Without it the Action would reject operations on fork issues and could not apply the fork check of the Worker.
+ */
+export async function loadLiveCatalog(baseUrl, fetchImpl = fetch) {
+  const url = String(baseUrl).replace(/\/$/, '');
+  const [tasks, config] = await Promise.all([
+    fetchImpl(`${url}/api/tasks`).then((r) => (r.ok ? r.json() : Promise.reject(new Error(`/api/tasks ${r.status}`)))),
+    fetchImpl(`${url}/api/config`).then((r) => (r.ok ? r.json() : Promise.reject(new Error(`/api/config ${r.status}`)))),
+  ]);
+  return {
+    tasks: (tasks.tasks ?? tasks).map((t) => ({ id: t.id, kind: t.kind, readiness: t.filters?.readiness ?? null, executable: t.kind !== 'group', status: t.status })),
+    forks: Array.isArray(config.task_repos) && config.task_repos.length ? config.task_repos : null,
+  };
+}
+
+export async function run(argv, env = process.env, log = console.log, { fetchImpl = fetch } = {}) {
   const apply = argv.includes('--apply');
   const files = argv.filter((a) => !a.startsWith('--'));
   if (!files.length) {
@@ -34,6 +50,17 @@ export async function run(argv, env = process.env, log = console.log) {
     return 2;
   }
   const catalog = loadCatalog();
+  if (env.GTA6_COORDINATOR_URL) {
+    try {
+      const live = await loadLiveCatalog(env.GTA6_COORDINATOR_URL, fetchImpl);
+      const seen = new Map(catalog.tasks.map((t) => [t.id, t]));
+      for (const t of live.tasks) if (!seen.has(t.id)) catalog.tasks.push({ ...t, depends_on: [] });
+      if (live.forks) catalog.forks = live.forks;
+      log(`live catalog: ${live.tasks.length} tasks, forks: ${(live.forks ?? []).join(', ') || 'unknown'}`);
+    } catch (err) {
+      log(`::warning::live catalog unavailable (${err.message}); validating against the seed only`);
+    }
+  }
   let exit = 0;
   for (const file of files) {
     let proposal;

@@ -1,0 +1,361 @@
+{
+  "schema_version": 1,
+  "id": "bootstrap-issues-2026-11-22",
+  "based_on": { "roadmap_version": 1, "snapshot_at": "2026-11-22T02:56:30.236Z" },
+  "rationale_md": "Initial planning pass (`local:plan/bootstrap-issues`), revised after review `rev_be68e3ff51947ff0` rejected the first version (PR #1, commit 8fdb8d1).\n\n## Changes from the rejected version\n1. **Fork repos.** Every `create_issue` now targets the technical fork (`gta6-forks/*`). Nothing is filed on an upstream project.\n2. **No duplicates.** The extra malformed-PE task is gone. `R0Y00/Xbox2Windows#77` already covers the empty-relocation case and is `ready`. The rest of that task was outside this planning task's scope.\n3. **Draft content kept.** Each replacing issue copies its draft's requirements (OS, GPU, physical hardware, toolchain, game files), acceptance criteria with their upstream sources, and restrictions. Nothing is weakened or invented.\n4. **ScarlettX group adds up.** The README counts 3 failing tests. They have 2 root causes: `test_d3d12_guest_texture` comes from the late texture upload, and `test_boot_hello_scarlett` plus `test_boot_rt_showcase` both come from the System32 `xgameruntime.dll` being loaded in child-process boot. The group title says \"3 failing tests, 2 root causes\", and both children exist.\n5. **xgameruntime scope checked against upstream.** The draft's \"48 of 398\" is stale. At `gta6-forks/americas-recomp@6a9417f`, `README.md` line 37 says \"365 of 398 methods implemented\" and `docs/xbox/xgr_status.json` lists exactly 33 methods that still log and fail. XTaskQueue/XAsync, offline XUser, system, storage, package, save, network, streaming, accessibility, capture and store already exist upstream. So the old coverage-table, XTaskQueue and XUser tasks were dropped (`status_json.py` is the coverage table). The group now has two children, covering the XGameUi family (23 methods) and the XLaunch family (3 methods). The other 7 methods stay out of scope on purpose, for the reasons the upstream README gives (no documented result, or cross-cutting design); they are listed in the group body. Every child repeats the AGENTS.md rule: an unimplemented method fails, and no method is stubbed to return made-up success.\n6. **#126 criteria live on the task itself.** No operation can edit the acceptance criteria of an existing upstream-catalog task. So `R0Y00/Xbox2Windows#126` is replaced, via `replaces_draft`, by an issue in `gta6-forks/Xbox2Windows` that holds the full criteria, the requirements and the restrictions, and links the upstream issue. The apply step closes only the coordinator catalog entry (an override, because `R0Y00/Xbox2Windows` is not a managed fork). The upstream issue is not touched. The new issue is `ready`. The `roadmap_change` from the rejected version is removed.\n7. **Consistent parents.** The parent link is stated once, by `add_subissue` with the `new:` group refs. The rejected version mixed `draft:` ids in `task.parent` with `new:` refs in `add_subissue`. The schema does not accept `new:` refs in `task.parent`, and a `draft:` parent would point at a closed draft. So the four children carry no `task.parent`, and the schema-required `kind` is `issue`. Parent and child are in the same fork, so the apply step creates a real GitHub sub-issue link, and the catalog reads the parent from that link (`src/github/read-source.js`).\n8. **Honest readiness.** `ready` only where the task is buildable and checkable without unconfirmed hardware or open questions: the two ScarlettX fixes, the two xgameruntime children and the #126 replacement. Leonida system values and fp16 interpolation are created as `needs_info`. Both need physical-GPU evidence (AMD for fp16), and for fp16 it is still open whether PC RDNA2 represents the Xbox (gfx1013 not measured).\n\n## Drafts kept as drafts\n- `draft:breadbbbb/rpf9-explorer/bcpack-decoder` stays a draft. No source defines an acceptance criterion, and the validation game-file requirement is `unknown`. Promoting it would mean making up criteria. A later pass can define them, for example against the synthetic `bcpack_prefix_and_mip_tail` fixtures in Xbox2Windows, once upstream confirms that reference.\n\nNo operation touches the protected objective or a protected milestone. 9 `create_issue` operations.",
+  "operations": [
+    {
+      "op": "create_issue",
+      "ref": "new:x2w-xmemalloc-attributes",
+      "repo": "gta6-forks/Xbox2Windows",
+      "replaces_draft": "R0Y00/Xbox2Windows#126",
+      "title": "Decode the XMemAlloc attribute word (Bink and AMD callers) — tracks R0Y00/Xbox2Windows#126",
+      "body_md": "Tracks upstream issue https://github.com/R0Y00/Xbox2Windows/issues/126 and adds the acceptance criteria that issue lacks (it is a question).\n\n`src/era_heap.cpp` only honors the alignment field (bits 24–28). The issue proposes the ERA `XALLOC_ATTRIBUTES` layout (`dwObjectType:14, dwPageSize:2, dwAllocatorId:8, dwAlignment:5, dwMemoryType:4, reserved:31`) and decodes `0x05e50000` (Bink) and `0xa8004000` (AMD). Both words are already published in `docs/experiments.md`.\n\n## Acceptance criteria\n- `src/era_heap.cpp` decodes the attribute word into the named `XALLOC_ATTRIBUTES` fields (one decode function, no ad-hoc shifts at call sites); the existing alignment behaviour is unchanged.\n- Unit tests decode `0x05e50000` and `0xa8004000` and assert every field value, derived from the cited layout; they fail before the change and pass after it.\n- A Markdown section (in `docs/experiments.md` or the heap documentation) lists each field with its bit range and its source (SlimEra `era.h`, WinDurango `kernelx.h`).\n- Fields with no cited meaning (allocatorId `0xE5`, memory type GRAPHICS_5) are documented as unknown. They are not given made-up semantics, and allocation behaviour does not depend on them.\n- PR follows `Xbox2Windows/CONTRIBUTING.md`: exact test command with its result, references R0Y00/Xbox2Windows#126, declares AI use.\n\n## Requirements\n- Windows; Visual Studio 2022 + CMake/Ninja + Windows SDK 10.0.26100.\n- No game files (both words are already public in the repository).\n\n## Restrictions\n- No game files.\n- Do not mention the title's name (`Xbox2Windows/AGENTS.md`).",
+      "task": {
+        "kind": "issue", "role": "execute", "type": "operational", "priority": "p2", "difficulty": "medium", "milestone": "M1-entrada", "readiness": "ready",
+        "instructions_md": "# XMemAlloc attributes (upstream R0Y00/Xbox2Windows#126)\n\n`src/era_heap.cpp` only honors the alignment field (bits 24–28). Decode the whole attribute word with the ERA `XALLOC_ATTRIBUTES` layout (`dwObjectType:14, dwPageSize:2, dwAllocatorId:8, dwAlignment:5, dwMemoryType:4, reserved:31`). Test it with the published words `0x05e50000` (Bink) and `0xa8004000` (AMD). Document unknown fields (allocatorId `0xE5`, GRAPHICS_5) as unknown.\n\n1. Read `AGENTS.md`, `CONTRIBUTING.md` and the upstream issue.\n2. Write the failing decode tests, implement the decoder, keep alignment behaviour unchanged.\n3. Document the fields with their sources.\n4. Open the PR with the exact command and result, referencing R0Y00/Xbox2Windows#126.",
+        "requirements": {
+          "implementation": {
+            "required": [
+              { "kind": "os", "value": ["windows"], "confidence": "inferred", "source": "the heap is the project's Windows runtime" },
+              { "kind": "tool", "value": "Visual Studio 2022 + CMake/Ninja + Windows SDK 10.0.26100", "confidence": "confirmed", "source": "Xbox2Windows/README.md#first-build" },
+              { "kind": "game_files", "value": "no", "confidence": "confirmed", "source": "issue #126: both words are already published in docs/experiments.md" }
+            ],
+            "optional": [],
+            "suggested": [
+              { "kind": "skill", "value": "Reading SlimEra era.h and WinDurango kernelx.h", "confidence": "confirmed", "source": "issue #126 Evidence" }
+            ]
+          },
+          "validation": {
+            "required": [
+              { "kind": "os", "value": ["windows"], "confidence": "inferred", "source": "same build" },
+              { "kind": "game_files", "value": "no", "confidence": "inferred", "source": "acceptance uses only the two published words; new caller words are out of scope" }
+            ],
+            "optional": [],
+            "suggested": []
+          }
+        },
+        "acceptance": [
+          { "text": "src/era_heap.cpp decodes the attribute word into the named XALLOC_ATTRIBUTES fields through one decode function; existing alignment behaviour unchanged.", "source": "local:plan/bootstrap-issues (from issue #126 proposal)", "confidence": "confirmed" },
+          { "text": "Unit tests decode 0x05e50000 and 0xa8004000 and assert every field value derived from the cited layout; they fail before and pass after.", "source": "local:plan/bootstrap-issues; Xbox2Windows/CONTRIBUTING.md", "confidence": "confirmed" },
+          { "text": "Markdown documents each field, its bit range and its source (SlimEra era.h, WinDurango kernelx.h).", "source": "local:plan/bootstrap-issues", "confidence": "confirmed" },
+          { "text": "allocatorId 0xE5 and GRAPHICS_5 are documented as unknown; no made-up semantics, and allocation behaviour does not depend on them.", "source": "issue #126 open questions", "confidence": "confirmed" },
+          { "text": "PR follows Xbox2Windows/CONTRIBUTING.md: exact test command with result, references R0Y00/Xbox2Windows#126, declares AI use.", "source": "Xbox2Windows/CONTRIBUTING.md#submit-and-review-a-patch", "confidence": "confirmed" }
+        ],
+        "deliverables": ["code", "tests", "knowledge_md"],
+        "sources": [
+          { "kind": "issue", "ref": "https://github.com/R0Y00/Xbox2Windows/issues/126", "retrieved_at": "2026-11-21" }
+        ],
+        "restrictions": ["No game files", "Do not mention the title's name (Xbox2Windows/AGENTS.md)"]
+      }
+    },
+    {
+      "op": "create_issue",
+      "ref": "new:scarlettx-failing-tests",
+      "repo": "gta6-forks/ScarlettX",
+      "replaces_draft": "draft:Freminet/ScarlettX/failing-tests",
+      "title": "Grouping: the 3 failing tests in ScarlettX (2 root causes)",
+      "body_md": "Grouping parent issue (not executable). README: \"Tests: 20/23 passing (failing: test_d3d12_guest_texture, test_boot_hello_scarlett, test_boot_rt_showcase)\".\n\nThe 3 failures have 2 root causes, one child issue each:\n- Guest texture upload is one frame late → `test_d3d12_guest_texture`.\n- Child-process boot loads `xgameruntime.dll` from System32 → `test_boot_hello_scarlett` and `test_boot_rt_showcase`.\n\n## Acceptance criteria\n- All sub-issues completed (23/23 tests passing, status regenerated).",
+      "task": {
+        "kind": "group", "role": "execute", "type": "operational", "priority": "p1", "difficulty": "medium", "milestone": "M1-entrada", "readiness": "ready",
+        "instructions_md": "Grouping parent issue (not executable). 3 failing tests, 2 root causes: the guest-texture upload (test_d3d12_guest_texture) and the child-process boot DLL search (test_boot_hello_scarlett, test_boot_rt_showcase).",
+        "requirements": { "implementation": { "required": [], "optional": [], "suggested": [] }, "validation": { "required": [], "optional": [], "suggested": [] } },
+        "acceptance": [
+          { "text": "All subissues completed.", "source": "coordinator", "confidence": "confirmed" }
+        ],
+        "deliverables": [],
+        "sources": [ { "kind": "file", "ref": "ScarlettX/README.md", "heading": "Status", "lines": "19" } ]
+      }
+    },
+    {
+      "op": "create_issue",
+      "ref": "new:scarlettx-guest-texture-upload",
+      "repo": "gta6-forks/ScarlettX",
+      "replaces_draft": "draft:Freminet/ScarlettX/guest-texture-upload",
+      "title": "Guest texture upload is one frame late (test_d3d12_guest_texture)",
+      "body_md": "Part of the ScarlettX failing-tests group (1 of 2 root causes).\n\nTexels the title writes to the texture address are uploaded once per presented frame, before the first submit. A later write arrives one frame late. The test rewrites the texture and expects the next submit to see the new data.\n\n## Acceptance criteria\n- `test_d3d12_guest_texture` passes in `ctest --test-dir build --output-on-failure`.\n- The other tests keep passing.\n- Status regenerated with `python tools/generate_status.py --build-dir <build>`.\n\n## Requirements\n- Windows; CMake 3.20+, Ninja, C++20 (MinGW-w64 GCC 13+ or MSVC 2022). No GPU needed (D3D12 runtime + WARP). No game files (synthetic titles).",
+      "task": {
+        "kind": "issue", "role": "execute", "type": "operational", "priority": "p1", "difficulty": "medium", "milestone": "M1-entrada", "readiness": "ready",
+        "instructions_md": "Texels the title writes to the texture address are uploaded once per presented frame, before the first submit; a later write arrives one frame late. The test rewrites the texture and expects the next submit to see the new data.",
+        "requirements": {
+          "implementation": {
+            "required": [
+              { "kind": "os", "value": ["windows"], "confidence": "confirmed", "source": "ScarlettX/README.md#building--running-tests" },
+              { "kind": "tool", "value": "CMake 3.20+, Ninja, C++20 (MinGW-w64 GCC 13+ or MSVC 2022)", "confidence": "confirmed", "source": "ScarlettX/README.md#building--running-tests" },
+              { "kind": "game_files", "value": "no", "confidence": "confirmed", "source": "ScarlettX/README.md: tests use synthetic titles" }
+            ],
+            "optional": [],
+            "suggested": [ { "kind": "gpu", "value": "none", "confidence": "inferred", "source": "requirements list D3D12 runtime + WARP" } ]
+          },
+          "validation": {
+            "required": [
+              { "kind": "os", "value": ["windows"], "confidence": "confirmed", "source": "ScarlettX/README.md" },
+              { "kind": "game_files", "value": "no", "confidence": "confirmed", "source": "ScarlettX/README.md" }
+            ],
+            "optional": [],
+            "suggested": []
+          }
+        },
+        "acceptance": [
+          { "text": "test_d3d12_guest_texture passes in ctest --test-dir build --output-on-failure.", "source": "ScarlettX/README.md line 86", "confidence": "confirmed" },
+          { "text": "The other tests keep passing.", "source": "coordinator", "confidence": "inferred" },
+          { "text": "Status regenerated with python tools/generate_status.py --build-dir <build>.", "source": "ScarlettX/README.md#status", "confidence": "confirmed" }
+        ],
+        "deliverables": ["code", "tests"],
+        "sources": [ { "kind": "file", "ref": "ScarlettX/README.md", "heading": "Current Limitations", "lines": "86" } ]
+      }
+    },
+    {
+      "op": "create_issue",
+      "ref": "new:scarlettx-child-process-boot",
+      "repo": "gta6-forks/ScarlettX",
+      "replaces_draft": "draft:Freminet/ScarlettX/child-process-boot",
+      "title": "Child-process boot loads xgameruntime.dll from System32 (test_boot_hello_scarlett, test_boot_rt_showcase)",
+      "body_md": "Part of the ScarlettX failing-tests group (2 of 2 root causes; covers two of the three failing tests).\n\nWithout `--in-process`, the guest finds the shims only via PATH. With `C:\\Windows\\System32\\xgameruntime.dll` present, that copy is loaded first and the synthetic titles exit with 0xC0000139 (`test_boot_hello_scarlett`, `test_boot_rt_showcase`). They boot with the shims next to the executable. Observed on Windows 11 build 26100.\n\n## Acceptance criteria\n- `test_boot_hello_scarlett` and `test_boot_rt_showcase` pass on a machine with the DLL in System32.\n- Upstream states no preferred approach (DLL search order vs. copying shims): the PR states the approach chosen and why.\n\n## Requirements\n- Windows; CMake 3.20+, Ninja, C++20 (MinGW-w64 GCC 13+ or MSVC 2022). No game files.\n- **Validation needs a machine with `C:\\Windows\\System32\\xgameruntime.dll` present.**",
+      "task": {
+        "kind": "issue", "role": "execute", "type": "operational", "priority": "p1", "difficulty": "low", "milestone": "M1-entrada", "readiness": "ready",
+        "instructions_md": "Without `--in-process`, the guest finds the shims only via PATH. With `C:\\Windows\\System32\\xgameruntime.dll` present, that copy is loaded first and the synthetic titles exit with 0xC0000139 (`test_boot_hello_scarlett`, `test_boot_rt_showcase`). They boot with the shims next to the executable.",
+        "requirements": {
+          "implementation": {
+            "required": [
+              { "kind": "os", "value": ["windows"], "confidence": "confirmed", "source": "ScarlettX/README.md line 87 (observed on Windows 11 build 26100)" },
+              { "kind": "tool", "value": "CMake 3.20+, Ninja, C++20 (MinGW-w64 GCC 13+ or MSVC 2022)", "confidence": "confirmed", "source": "ScarlettX/README.md" },
+              { "kind": "game_files", "value": "no", "confidence": "confirmed", "source": "ScarlettX/README.md" }
+            ],
+            "optional": [],
+            "suggested": []
+          },
+          "validation": {
+            "required": [
+              { "kind": "os", "value": ["windows"], "confidence": "confirmed", "source": "ScarlettX/README.md line 87" },
+              { "kind": "hardware", "value": "Machine with C:\\Windows\\System32\\xgameruntime.dll present", "confidence": "confirmed", "source": "ScarlettX/README.md line 87" }
+            ],
+            "optional": [],
+            "suggested": []
+          }
+        },
+        "acceptance": [
+          { "text": "test_boot_hello_scarlett and test_boot_rt_showcase pass on a machine with the DLL in System32.", "source": "ScarlettX/README.md line 87", "confidence": "confirmed" },
+          { "text": "Preferred approach (DLL search order vs. copying shims).", "source": "ScarlettX/README.md", "confidence": "unspecified" },
+          { "text": "The PR states the approach chosen and why, since upstream states no preference.", "source": "local:plan/bootstrap-issues", "confidence": "inferred" }
+        ],
+        "deliverables": ["code", "tests"],
+        "sources": [ { "kind": "file", "ref": "ScarlettX/README.md", "heading": "Current Limitations", "lines": "87" } ]
+      }
+    },
+    {
+      "op": "create_issue",
+      "ref": "new:leonida-system-values",
+      "repo": "gta6-forks/Leonida",
+      "replaces_draft": "draft:ItsNotRexed/Leonida/system-values",
+      "title": "Per-stage system-value layout (compute, mesh, geometry)",
+      "body_md": "Leonida README, *Want to help?*: \"Compute, mesh and geometry shaders: their per-stage system-value register layout.\"\n\nEach new rule goes into the contract table in `docs/design.md` with its form of confirmation (GPU test, Mesa/LLVM reference or corpus count).\n\n## Readiness: needs_info\nValidation requires a **physical GPU** (`check.py` runs the tests on the GPU; wave64 is only exact on AMD). This issue becomes `ready` once a contributor with confirmed physical-GPU access (preferably AMD) takes it, and the stage to start with is chosen (one stage per PR keeps it reviewable).\n\n## Acceptance criteria\n- Rule in the contract table of `docs/design.md` with its form of confirmation.\n- Hand-written `.asm` fixture with the expected output words; `python -m unittest discover -s tests/semantic -v` passes.\n- PR states GPU and driver and declares AI use; no skip-list.\n\n## Requirements\n- Python 3.11+ (stdlib, `python -I`); LLVM 21+ with the AMDGPU target (`llvm-mc`); Vulkan SDK (`spirv-as`, `spirv-val`). Linux or Windows via WSL.\n- Validation: physical GPU (AMD for exact wave64). Corpus-count evidence would need `shaders.rpf` (optional path; GPU or Mesa/LLVM evidence needs no game files).\n\n## Restrictions\n- No game shaders in any form (`Leonida/AGENTS.md`).",
+      "task": {
+        "kind": "issue", "role": "execute", "type": "operational", "priority": "p1", "difficulty": "high", "milestone": "M2-shaders", "readiness": "needs_info",
+        "instructions_md": "Leonida README, *Want to help?*: \"Compute, mesh and geometry shaders: their per-stage system-value register layout.\"\n\nEach new rule goes into the contract table in `docs/design.md` with its form of confirmation (GPU test, Mesa/LLVM reference or corpus count).\n\nneeds_info: confirm physical-GPU access (preferably AMD) for validation, and pick the first stage.",
+        "requirements": {
+          "implementation": {
+            "required": [
+              { "kind": "tool", "value": "Python 3.11+ (stdlib, python -I)", "confidence": "confirmed", "source": "Leonida/CONTRIBUTING.md" },
+              { "kind": "tool", "value": "LLVM 21+ with the AMDGPU target (llvm-mc)", "confidence": "confirmed", "source": "Leonida/README.md#how-to-build" },
+              { "kind": "tool", "value": "Vulkan SDK (spirv-as, spirv-val)", "confidence": "confirmed", "source": "Leonida/README.md#how-to-build" },
+              { "kind": "game_files", "value": "no", "confidence": "inferred", "source": "GPU- or Mesa-based evidence paths do not use the game (Leonida/CONTRIBUTING.md)" }
+            ],
+            "optional": [
+              { "kind": "os", "value": ["linux", "windows"], "confidence": "confirmed", "source": "build.py requires llvm-mc via WSL or Linux (Leonida/CONTRIBUTING.md)" }
+            ],
+            "suggested": [
+              { "kind": "skill", "value": "ISA RDNA2, Mesa ACO/RADV", "confidence": "confirmed", "source": "Leonida/README.md#credits" }
+            ]
+          },
+          "validation": {
+            "required": [
+              { "kind": "gpu", "value": "physical", "confidence": "confirmed", "source": "check.py runs the tests on the GPU (Leonida/CONTRIBUTING.md)" }
+            ],
+            "optional": [
+              { "kind": "gpu", "value": "amd", "confidence": "confirmed", "source": "wave64 is only exact on AMD (Leonida/README.md line 44)" },
+              { "kind": "game_files", "value": "yes", "confidence": "confirmed", "source": "corpus-count evidence requires shaders.rpf" }
+            ],
+            "suggested": []
+          }
+        },
+        "acceptance": [
+          { "text": "Rule in the contract table of docs/design.md with its form of confirmation.", "source": "Leonida/CONTRIBUTING.md", "confidence": "confirmed" },
+          { "text": "Hand-written .asm fixture with the expected output words; python -m unittest discover -s tests/semantic -v passes.", "source": "Leonida/CONTRIBUTING.md", "confidence": "confirmed" },
+          { "text": "PR states GPU and driver and declares AI use; no skip-list.", "source": "Leonida/AGENTS.md", "confidence": "confirmed" }
+        ],
+        "deliverables": ["code", "tests", "knowledge_md"],
+        "sources": [ { "kind": "file", "ref": "Leonida/README.md", "heading": "Want to help?", "lines": "132-134" } ],
+        "restrictions": ["No game shaders in any form (Leonida/AGENTS.md)"]
+      }
+    },
+    {
+      "op": "create_issue",
+      "ref": "new:recomp-f16-interpolation",
+      "repo": "gta6-forks/americas-recomp",
+      "replaces_draft": "draft:realdody/americas-recomp/f16-interpolation",
+      "title": "Measure fp16 rounding of interpolants (retire XBOX_ALLOW_UNMEASURED_F16_INTERP)",
+      "body_md": "README (xbox-series), *Pixel (strict)*: most failures read a 16-bit interpolant. They are refused because the Xbox uses round-toward-zero and \"there is no measured model\". *Assumptions*, item 3: `XBOX_ALLOW_UNMEASURED_F16_INTERP`.\n\n## Readiness: needs_info\n- Needs an AMD GPU with the hardware oracle (`docs/dev/HW_ORACLE.md`) for both implementation and validation.\n- Open question: does measuring on PC RDNA2 represent the Xbox? `HW_ORACLE.md` notes gfx1013 was not measured. Upstream should confirm which hardware counts as evidence before this becomes `ready`.\n\n## Acceptance criteria\n- Semantics cite their source (hardware: the GPU and what was checked; or ISA/LLVM/ACO/Mesa). Anything unverified goes to technical debt.\n- PR with the GPUs tested and the AI-assisted lines filled in.\n- Replace the opt-in with a measured model.\n\n## Requirements\n- AMD GPU; hardware oracle (`oracle_hip.py` on Windows, `oracle.c`/HSA on Linux). Optional: Vulkan SDK (glslangValidator) + `exec.exe` (`build_msvc.py --with-exec`).\n- No game files to measure. Reporting the gain on the pixel-shader corpus would need `shaders.rpf` (optional).",
+      "task": {
+        "kind": "issue", "role": "execute", "type": "operational", "priority": "p1", "difficulty": "high", "milestone": "M2-shaders", "readiness": "needs_info",
+        "instructions_md": "README (xbox-series), *Pixel (strict)*: most failures read a 16-bit interpolant, refused because the Xbox uses round-toward-zero and \"there is no measured model\". *Assumptions*, item 3: `XBOX_ALLOW_UNMEASURED_F16_INTERP`.\n\nneeds_info: confirm AMD hardware-oracle access and whether PC RDNA2 measurements represent the Xbox (gfx1013 not measured).",
+        "requirements": {
+          "implementation": {
+            "required": [
+              { "kind": "gpu", "value": "amd", "confidence": "confirmed", "source": "docs/dev/HW_ORACLE.md (AMD driver, HIP/comgr or HSA)" },
+              { "kind": "tool", "value": "Hardware oracle (oracle_hip.py on Windows, oracle.c/HSA on Linux)", "confidence": "confirmed", "source": "docs/dev/HW_ORACLE.md" },
+              { "kind": "game_files", "value": "no", "confidence": "inferred", "source": "measuring the rounding does not use the corpus" }
+            ],
+            "optional": [
+              { "kind": "os", "value": ["windows", "linux"], "confidence": "confirmed", "source": "docs/dev/HW_ORACLE.md" },
+              { "kind": "tool", "value": "Vulkan SDK (glslangValidator) + exec.exe (build_msvc.py --with-exec)", "confidence": "confirmed", "source": "tools/xbox/README.md" }
+            ],
+            "suggested": [
+              { "kind": "hardware", "value": "Whether measuring on PC RDNA2 represents the Xbox", "confidence": "unspecified", "source": "HW_ORACLE.md: gfx1013 not measured" }
+            ]
+          },
+          "validation": {
+            "required": [
+              { "kind": "gpu", "value": "amd", "confidence": "confirmed", "source": "CONTRIBUTING.md: reviewers check semantics on hardware" }
+            ],
+            "optional": [
+              { "kind": "game_files", "value": "yes", "confidence": "confirmed", "source": "reporting the gain on the pixel shader corpus requires shaders.rpf" }
+            ],
+            "suggested": []
+          }
+        },
+        "acceptance": [
+          { "text": "Semantics citing the source (hardware: GPU and what was checked; or ISA/LLVM/ACO/Mesa); anything unverified goes to technical debt.", "source": "americas-recomp/CONTRIBUTING.md", "confidence": "confirmed" },
+          { "text": "PR with the GPUs tested and AI-assisted lines filled in.", "source": "americas-recomp/AGENTS.md", "confidence": "confirmed" },
+          { "text": "Replace the opt-in with a measured model.", "source": "coordinator", "confidence": "inferred" }
+        ],
+        "deliverables": ["code", "tests", "knowledge_md"],
+        "sources": [
+          { "kind": "file", "ref": "americas-recomp/README.md", "heading": "What does not work yet", "lines": "43" },
+          { "kind": "file", "ref": "americas-recomp/README.md", "heading": "Assumptions (not verified on hardware)", "lines": "53" }
+        ]
+      }
+    },
+    {
+      "op": "create_issue",
+      "ref": "new:recomp-xgr-group",
+      "repo": "gta6-forks/americas-recomp",
+      "replaces_draft": "draft:realdody/americas-recomp/xgameruntime-standin",
+      "title": "Grouping: remaining xgameruntime.dll stand-in methods (33 of 398 still log and fail)",
+      "body_md": "Grouping parent issue (not executable) for `tools/xbox/platform/xgr`.\n\nThe draft said \"48 of 398 methods\". That number is stale. At `gta6-forks/americas-recomp@6a9417f`, `README.md` line 37 says **365 of 398 methods implemented**, and `docs/xbox/xgr_status.json` (generated by `status_json.py`) lists the 33 methods that still log and fail. XTaskQueue/XAsync, XThread, offline XUser, XSystem, persistent local storage, XPackage, XGameSave, networking, streaming, accessibility, app capture and XStore already exist upstream, so no tasks are planned for them.\n\n## Sub-issues (2)\n1. XGameUi family: 23 methods (web authentication, multiplayer-activity invite, text entry, state share, `XGameUiSetUiCallbacks` and the eight `XGameUiSet*UiResponse` calls).\n2. XLaunch family: 3 methods (`XLaunchUri`, `XLaunchNewGame`, `XLaunchRestartOnCrash`).\n\n## Intentionally not planned (7 methods)\nThe upstream xgr README gives the reason for each: `XAppCaptureTakeScreenshot` (no capture service), `XGameActivationAcceptPendingInvite` and `XGameInviteAcceptPendingInvite` (no result documented for accepting an invite that is not pending), `XSystemHandleTrack` and `XSystemIsHandleValid` (need every handle-creating call to report to them), `XPackageUninstallChunks` and `XPersistentLocalStorageMountForPackage` (need a store or a download). They keep logging and failing until a later planning pass finds a documented answer.\n\n## Acceptance criteria\n- All sub-issues completed.\n- `docs/xbox/xgr_status.json` and the README count are regenerated by the children and stay accurate.",
+      "task": {
+        "kind": "group", "role": "execute", "type": "operational", "priority": "p2", "difficulty": "high", "milestone": "M4-runtime", "readiness": "ready",
+        "instructions_md": "Grouping parent issue (not executable). 33 of 398 xgameruntime methods still log and fail (docs/xbox/xgr_status.json @ 6a9417f). Children: XGameUi family (23 methods) and XLaunch family (3 methods). The other 7 are intentionally not planned, for the reasons given in tools/xbox/platform/xgr/README.md.",
+        "requirements": { "implementation": { "required": [], "optional": [], "suggested": [] }, "validation": { "required": [], "optional": [], "suggested": [] } },
+        "acceptance": [
+          { "text": "All subissues completed.", "source": "coordinator", "confidence": "confirmed" },
+          { "text": "docs/xbox/xgr_status.json and the README method count regenerated and accurate.", "source": "americas-recomp/README.md line 9 (make_progress_svg.py reads xgr_status.json)", "confidence": "inferred" }
+        ],
+        "deliverables": [],
+        "sources": [
+          { "kind": "file", "ref": "americas-recomp/README.md", "heading": "What is built", "lines": "37" },
+          { "kind": "file", "ref": "americas-recomp/docs/xbox/xgr_status.json" },
+          { "kind": "file", "ref": "americas-recomp/tools/xbox/platform/xgr/README.md" }
+        ]
+      }
+    },
+    {
+      "op": "create_issue",
+      "ref": "new:recomp-xgr-gameui",
+      "repo": "gta6-forks/americas-recomp",
+      "title": "xgr: remaining XGameUi methods (web auth, invite, text entry, state share, UI callbacks)",
+      "body_md": "Part of the xgameruntime stand-in group. These 23 methods are still on the logging stub in `docs/xbox/xgr_status.json` @ 6a9417f:\n`XGameUiShowWebAuthenticationAsync`, `XGameUiShowWebAuthenticationResultSize`, `XGameUiShowWebAuthenticationResult`, `XGameUiShowWebAuthenticationWithOptionsAsync`, `XGameUiShowMultiplayerActivityGameInviteAsync`, `XGameUiShowMultiplayerActivityGameInviteResult`, `XGameUiTextEntryOpen`, `XGameUiTextEntryClose`, `XGameUiTextEntryGetState`, `XGameUiTextEntryGetExtents`, `XGameUiTextEntryUpdatePositionHint`, `XGameUiTextEntryUpdateVisibility`, `XGameUiShowStateShareAsync`, `XGameUiShowStateShareResult`, `XGameUiSetUiCallbacks`, `XGameUiSetMessageDialogUiResponse`, `XGameUiSetPlayerPickerUiResponse`, `XGameUiSetTextEntryUiResponse`, `XGameUiSetPlayerProfileCardUiResponse`, `XGameUiSetSendGameInviteUiResponse`, `XGameUiSetAchievementsUiResponse`, `XGameUiSetMultiplayerActivityGameInviteUiResponse`, `XGameUiSetErrorDialogUiResponse`.\n\nThe existing headless game UI (`runtime/impl_system.cpp`) completes dialogs, pickers and text entry with `E_ABORT` and never shows a window. Extend that behaviour from the interface signatures and the public GDK documentation.\n\n## Acceptance criteria\n- Each method either gets behaviour backed by the public GDK documentation for a headless PC (cited in the xgr README's behaviour list) or stays on the logging stub, with the reason listed in the README. **Never return made-up success.** An unimplemented method fails.\n- General behaviour, not that of one title.\n- A `test_gameui.cpp` (pattern of `test_system.cpp`) covers every newly implemented method, including null-argument / `E_INVALIDARG` cases.\n- `docs/xbox/xgr_status.json` regenerated with `status_json.py`; README count updated.\n- Conventional Commits, no code comments, `check_conventions.py` passes, complete PR template with AI-assisted lines.\n\n## Requirements\n- Windows, x64 VS prompt (`cl`), Python 3 (`python -I`). Xodus IDLs (LGPL, not committed) to generate the table. No game files.",
+      "task": {
+        "kind": "issue", "role": "execute", "type": "operational", "priority": "p2", "difficulty": "medium", "milestone": "M4-runtime", "readiness": "ready",
+        "instructions_md": "Implement, where the public GDK documentation gives a headless-PC answer, the 23 XGameUi methods still on the logging stub (see docs/xbox/xgr_status.json). Follow the existing headless game UI in runtime/impl_system.cpp. Methods without a documented answer stay failing, with the reason in the xgr README. Never return made-up success.",
+        "requirements": {
+          "implementation": {
+            "required": [
+              { "kind": "os", "value": ["windows"], "confidence": "confirmed", "source": "tools/xbox/platform/xgr/README.md (x64 VS prompt, cl)" },
+              { "kind": "tool", "value": "MSVC (x64 VS prompt), Python 3 (python -I), Xodus IDL headers (LGPL, not committed)", "confidence": "confirmed", "source": "tools/xbox/platform/xgr/README.md" },
+              { "kind": "game_files", "value": "no", "confidence": "inferred", "source": "implementing does not require the game" }
+            ],
+            "optional": [],
+            "suggested": [
+              { "kind": "skill", "value": "Compare with ScarlettX's xgameruntime", "confidence": "inferred", "source": "ScarlettX/README.md" }
+            ]
+          },
+          "validation": {
+            "required": [
+              { "kind": "os", "value": ["windows"], "confidence": "confirmed", "source": "tests are Windows executables (xgr README)" },
+              { "kind": "game_files", "value": "no", "confidence": "inferred", "source": "test_*.cpp clients use the DLL directly" }
+            ],
+            "optional": [
+              { "kind": "game_files", "value": "yes", "confidence": "confirmed", "source": "README: real use only when the executable is available" }
+            ],
+            "suggested": []
+          }
+        },
+        "acceptance": [
+          { "text": "An unimplemented method fails; never return fabricated success; general behavior, not that of one title.", "source": "americas-recomp/AGENTS.md", "confidence": "confirmed" },
+          { "text": "Each of the 23 methods is either implemented from the public GDK documentation (behaviour listed in the xgr README) or stays on the logging stub with the reason in the README.", "source": "tools/xbox/platform/xgr/README.md conventions", "confidence": "inferred" },
+          { "text": "test_gameui.cpp covers every newly implemented method, including invalid-argument cases.", "source": "tools/xbox/platform/xgr test_*.cpp pattern", "confidence": "inferred" },
+          { "text": "docs/xbox/xgr_status.json regenerated with status_json.py; README count updated.", "source": "tools/xbox/platform/xgr/status_json.py", "confidence": "confirmed" },
+          { "text": "Conventional Commits, no code comments, check_conventions.py, complete PR template.", "source": "americas-recomp/AGENTS.md", "confidence": "confirmed" },
+          { "text": "Whether the AnyPS5 rules fully apply to tools/xbox.", "source": "americas-recomp/CONTRIBUTING.md", "confidence": "unspecified" }
+        ],
+        "deliverables": ["code", "tests"],
+        "sources": [
+          { "kind": "file", "ref": "americas-recomp/docs/xbox/xgr_status.json" },
+          { "kind": "file", "ref": "americas-recomp/tools/xbox/platform/xgr/README.md" }
+        ],
+        "restrictions": ["Never return fabricated success (americas-recomp/AGENTS.md)", "Do not commit the LGPL Xodus IDLs or generated stub sources (xgr README)", "No game files"]
+      }
+    },
+    {
+      "op": "create_issue",
+      "ref": "new:recomp-xgr-launch",
+      "repo": "gta6-forks/americas-recomp",
+      "title": "xgr: XLaunch family (XLaunchUri, XLaunchNewGame, XLaunchRestartOnCrash)",
+      "body_md": "Part of the xgameruntime stand-in group. These 3 methods are still on the logging stub in `docs/xbox/xgr_status.json` @ 6a9417f. The xgr README lists \"launching\" among the things that log and fail.\n\n## Acceptance criteria\n- Each method either gets the PC behaviour documented in the public GDK documentation (cited in the xgr README's behaviour list) or stays on the logging stub, with the reason listed in the README. **Never return made-up success.** An unimplemented method fails.\n- General behaviour, not that of one title. Nothing is launched during tests (they must not open a browser or start a process).\n- A `test_launch.cpp` (pattern of `test_system.cpp`) covers every newly implemented method, including invalid-argument cases.\n- `docs/xbox/xgr_status.json` regenerated with `status_json.py`; README count updated.\n- Conventional Commits, no code comments, `check_conventions.py` passes, complete PR template with AI-assisted lines.\n\n## Requirements\n- Windows, x64 VS prompt (`cl`), Python 3 (`python -I`). Xodus IDLs (LGPL, not committed) to generate the table. No game files.",
+      "task": {
+        "kind": "issue", "role": "execute", "type": "operational", "priority": "p2", "difficulty": "low", "milestone": "M4-runtime", "readiness": "ready",
+        "instructions_md": "Implement XLaunchUri, XLaunchNewGame and XLaunchRestartOnCrash where the public GDK documentation gives a PC answer; otherwise they stay failing, with the reason in the xgr README. Never return made-up success. Tests must not launch anything.",
+        "requirements": {
+          "implementation": {
+            "required": [
+              { "kind": "os", "value": ["windows"], "confidence": "confirmed", "source": "tools/xbox/platform/xgr/README.md (x64 VS prompt, cl)" },
+              { "kind": "tool", "value": "MSVC (x64 VS prompt), Python 3 (python -I), Xodus IDL headers (LGPL, not committed)", "confidence": "confirmed", "source": "tools/xbox/platform/xgr/README.md" },
+              { "kind": "game_files", "value": "no", "confidence": "inferred", "source": "implementing does not require the game" }
+            ],
+            "optional": [],
+            "suggested": []
+          },
+          "validation": {
+            "required": [
+              { "kind": "os", "value": ["windows"], "confidence": "confirmed", "source": "tests are Windows executables (xgr README)" },
+              { "kind": "game_files", "value": "no", "confidence": "inferred", "source": "test_*.cpp clients use the DLL directly" }
+            ],
+            "optional": [
+              { "kind": "game_files", "value": "yes", "confidence": "confirmed", "source": "README: real use only when the executable is available" }
+            ],
+            "suggested": []
+          }
+        },
+        "acceptance": [
+          { "text": "An unimplemented method fails; never return fabricated success; general behavior, not that of one title.", "source": "americas-recomp/AGENTS.md", "confidence": "confirmed" },
+          { "text": "Each of the 3 methods is either implemented from the public GDK documentation (behaviour listed in the xgr README) or stays on the logging stub with the reason in the README; tests launch nothing.", "source": "tools/xbox/platform/xgr/README.md conventions", "confidence": "inferred" },
+          { "text": "test_launch.cpp covers every newly implemented method, including invalid-argument cases.", "source": "tools/xbox/platform/xgr test_*.cpp pattern", "confidence": "inferred" },
+          { "text": "docs/xbox/xgr_status.json regenerated with status_json.py; README count updated.", "source": "tools/xbox/platform/xgr/status_json.py", "confidence": "confirmed" },
+          { "text": "Conventional Commits, no code comments, check_conventions.py, complete PR template.", "source": "americas-recomp/AGENTS.md", "confidence": "confirmed" },
+          { "text": "Whether the AnyPS5 rules fully apply to tools/xbox.", "source": "americas-recomp/CONTRIBUTING.md", "confidence": "unspecified" }
+        ],
+        "deliverables": ["code", "tests"],
+        "sources": [
+          { "kind": "file", "ref": "americas-recomp/docs/xbox/xgr_status.json" },
+          { "kind": "file", "ref": "americas-recomp/tools/xbox/platform/xgr/README.md" }
+        ],
+        "restrictions": ["Never return fabricated success (americas-recomp/AGENTS.md)", "Do not commit the LGPL Xodus IDLs or generated stub sources (xgr README)", "No game files"]
+      }
+    },
+    { "op": "add_subissue", "parent": "new:scarlettx-failing-tests", "child": "new:scarlettx-guest-texture-upload" },
+    { "op": "add_subissue", "parent": "new:scarlettx-failing-tests", "child": "new:scarlettx-child-process-boot" },
+    { "op": "add_subissue", "parent": "new:recomp-xgr-group", "child": "new:recomp-xgr-gameui" },
+    { "op": "add_subissue", "parent": "new:recomp-xgr-group", "child": "new:recomp-xgr-launch" }
+  ]
+}

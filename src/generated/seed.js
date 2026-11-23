@@ -1170,6 +1170,59 @@ export const SEED = {
           "ref": "docs/CHALLENGES.md"
         }
       ]
+    },
+    {
+      "id": "local:plan/upstream-cleanup",
+      "repo": null,
+      "fork_repo": null,
+      "github_kind": null,
+      "url": null,
+      "title": "Reconcile the task stock with the original repositories and close what upstream already solved",
+      "kind": "issue",
+      "parent": null,
+      "type": "strategic",
+      "role": "plan",
+      "difficulty": "medium",
+      "difficulty_source": "estimate",
+      "priority": "p0",
+      "readiness": "ready",
+      "state": "open",
+      "milestone": "M1-entrada",
+      "depends_on": [],
+      "instructions_md": "# Upstream reconciliation of the stock\n\n1. `get_planning_context` and `get_upstream_status`: every open task with its upstream HEAD, automatic status and evidence.\n2. For each task whose acceptance criteria are already met upstream (resolved), obsolete or only partially open, check the evidence (commit, PR, file) yourself and record it with `record_upstream_verdict`.\n3. Propose `close_issue` (with the evidence in `reason`) for resolved/obsolete tasks; redefine partially met ones with `create_issue` for the remaining scope.\n4. Add the operational task for the public catalog: `GET /api/tasks` returns every task including cancelled and done ones, so the landing page miscounts. Add an optional `status` query filter (comma-separated, validated against the known statuses, 400 on an unknown one) plus a `counts` object by status, with tests. Target repository: `gta6-forks/gta6-coordinator`.\n5. `validate_planning_proposal`, then deliver the proposal file through your planning workspace.",
+      "requirements": {
+        "implementation": {
+          "required": [],
+          "optional": [],
+          "suggested": []
+        },
+        "validation": {
+          "required": [],
+          "optional": [],
+          "suggested": []
+        }
+      },
+      "acceptance": [
+        {
+          "text": "Every closed task cites upstream evidence (commit, PR or file) in its reason; no task is closed on title or keyword alone.",
+          "source": "docs/UPSTREAM.md",
+          "confidence": "confirmed"
+        },
+        {
+          "text": "Valid proposal according to schemas/planning-proposal.schema.json, opened as a PR in the coordinator repository.",
+          "source": "docs/SPEC.md",
+          "confidence": "confirmed"
+        }
+      ],
+      "deliverables": [
+        "planning_proposal"
+      ],
+      "sources": [
+        {
+          "kind": "coordinator",
+          "ref": "docs/UPSTREAM.md"
+        }
+      ]
     }
   ],
   "roadmap": {

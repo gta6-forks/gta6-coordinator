@@ -19,6 +19,8 @@ import { integrationResult, issueGitCredential, reconcileWorkspaces } from './se
 import { handleGithubWebhook } from './github/webhooks.js';
 import { metricsBundle } from './services/metrics.js';
 import { refreshCi } from './services/ci-sync.js';
+import { scheduledUpstreamCheck, upstreamConfig } from './services/upstream.js';
+import { getMeta } from './store/store.js';
 
 const MAX_BODY = 1024 * 1024;
 
@@ -128,6 +130,9 @@ export function createApp({ store, env, now = () => Date.now(), gitWrite = new P
         return json({ participant: { id: participant.id, kind: participant.kind, display_name: participant.display_name } });
       }
       if (pathname === '/internal/sync' && request.method === 'POST') return json(await sync());
+      if (pathname === '/internal/upstream-check' && request.method === 'POST') {
+        return json(await scheduledUpstreamCheck(ctx, { force: url.searchParams.get('force') === '1' }));
+      }
       if (pathname === '/internal/reconcile' && request.method === 'POST') {
         return json({ results: await reconcileWorkspaces(ctx), ci: await refreshCi(ctx, { force: true }) });
       }
@@ -180,7 +185,11 @@ export function createApp({ store, env, now = () => Date.now(), gitWrite = new P
         if (body.event === 'pr_merged') return json(markMerged(ctx, body));
         return json(await reportCi(ctx, body));
       }
-      if (pathname === '/health') return json({ ok: true, service: 'gta6-coordinator', git_write: gitWrite.describe(), workspaces: ctx.provisioner.describe() });
+      if (pathname === '/health') {
+        const last = getMeta(store, 'upstream_last_run', null);
+        const upstream = { mode: upstreamConfig(env).mode, last_run_at: last?.at ?? null, last_run_partial: last?.partial ?? null };
+        return json({ ok: true, service: 'gta6-coordinator', git_write: gitWrite.describe(), workspaces: ctx.provisioner.describe(), upstream });
+      }
       return json({ error: { code: 'not_found', message: 'not found' } }, 404);
     } catch (err) {
       return errorResponse(err);

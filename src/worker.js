@@ -85,6 +85,8 @@ export default {
           mcp_url: mcpUrl(env, request),
           reservation_ttl_hours: Number(env.RESERVATION_TTL_HOURS ?? 24),
           github_write: 'pending_decision',
+          // public: the main forks tasks live in (the planning Action checks proposals against them)
+          task_repos: String(env.TASK_REPOS ?? '').split(',').map((s) => s.trim()).filter(Boolean),
         });
       }
 
@@ -162,6 +164,8 @@ export default {
       (async () => {
         await stub.fetch(new Request('https://coordinator.internal/internal/sync', { method: 'POST' }));
         await stub.fetch(new Request('https://coordinator.internal/internal/reconcile', { method: 'POST' }));
+        // Upstream reconciliation (read-only, conditional requests; honours UPSTREAM_CHECK_MINUTES).
+        await stub.fetch(new Request('https://coordinator.internal/internal/upstream-check', { method: 'POST' }));
       })(),
     );
   },

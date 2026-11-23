@@ -23,6 +23,8 @@ jobs:
         with:
           node-version: 24
       - name: Validate changed proposals
+        env:
+          GTA6_COORDINATOR_URL: ${{ vars.GTA6_COORDINATOR_URL }}
         run: |
           files=$(git diff --name-only --diff-filter=AM origin/${{ github.base_ref }}...HEAD -- 'planning/proposals/*.json')
           if [ -z "$files" ]; then echo "no proposals changed"; exit 0; fi
@@ -47,4 +49,5 @@ jobs:
         run: |
           files=$(git diff --name-only --diff-filter=AM HEAD~1 HEAD -- 'planning/proposals/*.json')
           if [ -z "$files" ]; then echo "no proposals changed"; exit 0; fi
-          node tools/validate-planning.mjs --apply $files
+          # The coordinator Worker applies merged proposals itself (docs/SPEC.md D-PLAN-6); this step only re-validates.
+          node tools/validate-planning.mjs $files

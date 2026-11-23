@@ -105,3 +105,26 @@ test('GitHub Action script: validates, enforces 2 verifications and human gate, 
   assert.equal(await runAction(['--apply', good], { PLANNING_VERIFICATIONS: '2' }, log), 0);
   assert.ok(logs.some((l) => /apply -> pending_decision/.test(l)));
 });
+
+test('GitHub Action script: live catalog adds fork issues and the fork check', async () => {
+  const dir = mkdtempSync(join(tmpdir(), 'planning-live-'));
+  const closeFork = join(dir, 'close.json');
+  const noFork = join(dir, 'nofork.json');
+  writeFileSync(closeFork, JSON.stringify(base([{ op: 'close_issue', id: 'gta6-forks/ScarlettX#3', reason: 'fixed upstream in 2b281039' }])));
+  writeFileSync(noFork, JSON.stringify(base([{ ...newIssue, repo: 'someone/elsewhere' }])));
+  const api = {
+    '/api/tasks': { tasks: [{ id: 'gta6-forks/ScarlettX#3', kind: 'issue', status: 'open', filters: { readiness: 'ready' } }] },
+    '/api/config': { task_repos: ['gta6-forks/ScarlettX', 'gta6-forks/Xbox2Windows'] },
+  };
+  const fetchImpl = async (u) => ({ ok: true, json: async () => api[new URL(u).pathname] });
+  const logs = [];
+  const log = (l) => logs.push(l);
+  const env = { GTA6_COORDINATOR_URL: 'https://coord.test' };
+  assert.equal(await runAction([closeFork], {}, log), 1, 'seed only: fork issue unknown');
+  assert.equal(await runAction([closeFork], env, log, { fetchImpl }), 0, JSON.stringify(logs));
+  assert.equal(await runAction([noFork], env, log, { fetchImpl }), 1);
+  assert.ok(logs.some((l) => /has no main fork here/.test(l)));
+  const down = async () => ({ ok: false, status: 503 });
+  assert.equal(await runAction([closeFork], env, log, { fetchImpl: down }), 1);
+  assert.ok(logs.some((l) => /live catalog unavailable/.test(l)));
+});

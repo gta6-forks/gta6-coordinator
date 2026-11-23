@@ -6,6 +6,7 @@ import { planningProposalSchema } from '../schema/schemas.js';
 import { normalizeTask } from '../domain/task.js';
 import { findCycles, getRoadmap, loadTasks } from './catalog.js';
 import { recordEvent } from '../store/store.js';
+import { effectiveStatus, upstreamConfig, upstreamIndex, upstreamReport } from './upstream.js';
 
 /**
  * Pure validation shared by the MCP and the GitHub Action.
@@ -88,23 +89,79 @@ export function validateProposal(proposal, catalog) {
     if (op.op === 'close_issue' && ISSUE_ID.test(op.id) && (catalog.roadmap?.protected_tasks ?? []).includes(op.id)) requiresHuman = true;
   });
 
+  // Upstream reconciliation (optional data: the GitHub Action may validate without it).
+  const upstreamOf = (id) => byId.get(id)?.upstream_status ?? null;
+  const DEAD = new Set(['resolved_upstream', 'obsolete']);
+  // In `report` mode the automatic status is provisional and informational: it warns, it never rejects a proposal
+  // (an applied PR must not fail on data the GitHub Action could not see). Enforcement modes turn these into errors.
+  const enforcing = String(catalog.upstream?.mode ?? '').startsWith('enforce');
+  const upstreamError = (msg) => (enforcing ? errors : warnings).push(msg);
+  proposal.operations.forEach((op, i) => {
+    const at = `$.operations[${i}]`;
+    const target = op.op === 'create_issue' ? op.replaces_draft : ['set_priority', 'set_readiness', 'add_dependency', 'add_subissue'].includes(op.op) ? op.id ?? op.child : null;
+    const st = target ? upstreamOf(target) : null;
+    if (!st) return;
+    if (DEAD.has(st)) upstreamError(`${at}: ${target} is ${st} upstream; close it (close_issue) instead of keeping it in stock`);
+    else if (st === 'needs_review' || st === 'unchecked') warnings.push(`${at}: ${target} has not been revalidated against the upstream (${st}); check get_upstream_status first`);
+    else if ((st === 'partially_met' || st === 'needs_replan') && op.op === 'set_readiness' && op.readiness === 'ready') {
+      upstreamError(`${at}: ${target} is ${st} upstream; redefine it (create_issue with the remaining scope) before making it ready`);
+    }
+  });
+  if (catalog.upstream?.stale_repos?.length) {
+    warnings.push(`upstream snapshot older than the freshness limit for: ${catalog.upstream.stale_repos.join(', ')}`);
+  }
+  // Stock limit: open, ready, operational tasks per original repository.
+  const max = catalog.upstream?.max_stock_per_repo;
+  if (max) {
+    const key = (repo) => String(repo ?? '').split('/')[1]?.toLowerCase() ?? '';
+    const stock = new Map();
+    for (const t of byId.values()) {
+      if (t.status === 'open' && t.readiness === 'ready' && t.type === 'operational' && t.repo && !DEAD.has(t.upstream_status)) stock.set(key(t.repo), (stock.get(key(t.repo)) ?? 0) + 1);
+    }
+    const added = new Map();
+    for (const op of proposal.operations) {
+      if (op.op !== 'create_issue' || (op.task?.type ?? 'operational') !== 'operational' || op.task?.kind === 'group') continue;
+      added.set(key(op.repo), (added.get(key(op.repo)) ?? 0) + 1);
+    }
+    for (const [repo, n] of added) {
+      const total = (stock.get(repo) ?? 0) + n;
+      if (total > max) upstreamError(`stock limit: ${repo} would have ${total} open ready tasks (max ${max}); revalidate or close existing ones first`);
+    }
+  }
+
   const graph = [...byId.values(), ...created.values()].map((t) => ({ id: t.id, depends_on: t.depends_on ?? [] }));
   for (const cycle of findCycles(graph)) errors.push(`dependency cycle: ${cycle.join(' -> ')}`);
 
   return { valid: errors.length === 0, errors, warnings, requires_human_authorization: requiresHuman, summary: counts };
 }
 
-export function catalogSnapshot(store, env = null) {
+export function catalogSnapshot(store, env = null, now = Date.now()) {
+  const cfg = upstreamConfig(env ?? {});
+  const idx = env && cfg.mode !== 'off' ? upstreamIndex({ store, env, now: () => now }) : null;
+  const tasks = loadTasks(store);
   return {
     forks: env ? String(env.TASK_REPOS ?? '').split(',').map((s) => s.trim()).filter(Boolean) : null,
-    tasks: loadTasks(store).map((t) => ({
+    tasks: tasks.map((t) => ({
       id: t.id,
       depends_on: t.data.depends_on,
       kind: t.data.kind,
       executable: t.data.executable,
       readiness: t.data.readiness,
+      repo: t.data.repo ?? null,
+      type: t.data.type,
+      status: t.status,
+      ...(idx ? { upstream_status: effectiveStatus(idx, t).status } : {}),
     })),
     roadmap: getRoadmap(store),
+    ...(idx
+      ? {
+          upstream: {
+            mode: cfg.mode,
+            max_stock_per_repo: cfg.maxStockPerRepo,
+            stale_repos: [...idx.repos.values()].filter((r) => !r.last_success_at || now - r.last_success_at > cfg.staleMs).map((r) => r.repo),
+          },
+        }
+      : {}),
   };
 }
 
@@ -114,7 +171,7 @@ function requireStrategic(participant) {
 
 export function submitProposal(ctx, participant, proposal) {
   requireStrategic(participant);
-  const result = validateProposal(proposal, catalogSnapshot(ctx.store, ctx.env));
+  const result = validateProposal(proposal, catalogSnapshot(ctx.store, ctx.env, ctx.now()));
   const now = ctx.now();
   if (result.valid) {
     const existing = ctx.store.one('SELECT participant_id FROM proposals WHERE id = ?', proposal.id);
@@ -162,5 +219,7 @@ export function planningContext(ctx, participant) {
     .all("SELECT v.review_id, v.slot, v.data_json FROM verifications v WHERE v.verdict = 'reject' ORDER BY v.created_at DESC LIMIT 100")
     .map((v) => ({ review_id: v.review_id, slot: v.slot, feedback_md: JSON.parse(v.data_json).feedback_md }));
   const active = ctx.store.one("SELECT COUNT(*) AS n FROM reservations WHERE state = 'active'").n;
-  return { roadmap: getRoadmap(ctx.store), tasks, reviews, failures, active_reservations: active, generated_at: new Date(ctx.now()).toISOString() };
+  // The planner always sees the reconciliation with the ORIGINAL repositories (HEAD sha, last check, evidence).
+  const upstream = upstreamConfig(ctx.env).mode === 'off' ? null : upstreamReport(ctx);
+  return { roadmap: getRoadmap(ctx.store), tasks, reviews, failures, active_reservations: active, upstream, generated_at: new Date(ctx.now()).toISOString() };
 }

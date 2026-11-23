@@ -21,40 +21,119 @@
     "requirements": {
       "implementation": {
         "required": [
-          { "kind": "os", "value": ["windows"], "confidence": "confirmed", "source": "Xbox2Windows/README.md#first-build; tools/pe_map.cpp uses VirtualAlloc" },
-          { "kind": "tool", "value": "Visual Studio 2022 (Desktop development with C++)", "confidence": "confirmed", "source": "Xbox2Windows/README.md#first-build" },
-          { "kind": "tool", "value": "CMake + Ninja", "confidence": "confirmed", "source": "Xbox2Windows/README.md#first-build" },
-          { "kind": "tool", "value": "Windows SDK 10.0.26100 with DXC", "confidence": "confirmed", "source": "Xbox2Windows/README.md#first-build" },
-          { "kind": "game_files", "value": "no", "confidence": "confirmed", "source": "issue #77 (reproduction with a synthetic PE); Xbox2Windows/CONTRIBUTING.md" }
+          {
+            "kind": "os",
+            "value": [
+              "windows"
+            ],
+            "confidence": "confirmed",
+            "source": "Xbox2Windows/README.md#first-build; tools/pe_map.cpp uses VirtualAlloc"
+          },
+          {
+            "kind": "tool",
+            "value": "Visual Studio 2022 (Desktop development with C++)",
+            "confidence": "confirmed",
+            "source": "Xbox2Windows/README.md#first-build"
+          },
+          {
+            "kind": "tool",
+            "value": "CMake + Ninja",
+            "confidence": "confirmed",
+            "source": "Xbox2Windows/README.md#first-build"
+          },
+          {
+            "kind": "tool",
+            "value": "Windows SDK 10.0.26100 with DXC",
+            "confidence": "confirmed",
+            "source": "Xbox2Windows/README.md#first-build"
+          },
+          {
+            "kind": "game_files",
+            "value": "no",
+            "confidence": "confirmed",
+            "source": "issue #77 (reproduction with a synthetic PE); Xbox2Windows/CONTRIBUTING.md"
+          }
         ],
         "optional": [
-          { "kind": "tool", "value": "Python 3.11+ (fixture tests)", "confidence": "confirmed", "source": "Xbox2Windows/README.md#first-build" }
+          {
+            "kind": "tool",
+            "value": "Python 3.11+ (fixture tests)",
+            "confidence": "confirmed",
+            "source": "Xbox2Windows/README.md#first-build"
+          }
         ],
         "suggested": [
-          { "kind": "gpu", "value": "none", "confidence": "inferred", "source": "loader logic, no GPU" }
+          {
+            "kind": "gpu",
+            "value": "none",
+            "confidence": "inferred",
+            "source": "loader logic, no GPU"
+          }
         ]
       },
       "validation": {
         "required": [
-          { "kind": "os", "value": ["windows"], "confidence": "confirmed", "source": "Xbox2Windows/README.md#first-build" },
-          { "kind": "game_files", "value": "no", "confidence": "confirmed", "source": "issue #77" }
+          {
+            "kind": "os",
+            "value": [
+              "windows"
+            ],
+            "confidence": "confirmed",
+            "source": "Xbox2Windows/README.md#first-build"
+          },
+          {
+            "kind": "game_files",
+            "value": "no",
+            "confidence": "confirmed",
+            "source": "issue #77"
+          }
         ],
         "optional": [],
         "suggested": []
       }
     },
     "acceptance": [
-      { "text": "Reject the image when delta != 0 && relocs.Size == 0.", "source": "issue #77 Suggested fix", "confidence": "confirmed" },
-      { "text": "Ensure relocation blocks are complete and valid before reporting success.", "source": "issue #77 Suggested fix", "confidence": "confirmed" },
-      { "text": "New test with a synthetic PE that fails before and passes after.", "source": "Xbox2Windows/CONTRIBUTING.md", "confidence": "confirmed" },
-      { "text": "PR titled `pe: …`, exact test command with result, `Fixes #77`, MIT license.", "source": "Xbox2Windows/CONTRIBUTING.md#submit-and-review-a-patch", "confidence": "confirmed" }
+      {
+        "text": "Reject the image when delta != 0 && relocs.Size == 0.",
+        "source": "issue #77 Suggested fix",
+        "confidence": "confirmed"
+      },
+      {
+        "text": "Ensure relocation blocks are complete and valid before reporting success.",
+        "source": "issue #77 Suggested fix",
+        "confidence": "confirmed"
+      },
+      {
+        "text": "New test with a synthetic PE that fails before and passes after.",
+        "source": "Xbox2Windows/CONTRIBUTING.md",
+        "confidence": "confirmed"
+      },
+      {
+        "text": "PR titled `pe: …`, exact test command with result, `Fixes #77`, MIT license.",
+        "source": "Xbox2Windows/CONTRIBUTING.md#submit-and-review-a-patch",
+        "confidence": "confirmed"
+      }
     ],
-    "deliverables": ["code", "tests"],
+    "deliverables": [
+      "code",
+      "tests"
+    ],
     "sources": [
-      { "kind": "issue", "ref": "https://github.com/R0Y00/Xbox2Windows/issues/77", "retrieved_at": "2026-11-21" },
-      { "kind": "file", "ref": "Xbox2Windows/README.md", "heading": "First build" }
+      {
+        "kind": "issue",
+        "ref": "https://github.com/R0Y00/Xbox2Windows/issues/77",
+        "retrieved_at": "2026-11-21"
+      },
+      {
+        "kind": "file",
+        "ref": "Xbox2Windows/README.md",
+        "heading": "First build"
+      }
     ],
-    "restrictions": ["No game files", "Do not mention the title's name (Xbox2Windows/AGENTS.md)"]
+    "restrictions": [
+      "No game files",
+      "Do not mention the title's name (Xbox2Windows/AGENTS.md)"
+    ]
   },
   {
     "id": "R0Y00/Xbox2Windows#126",
@@ -78,31 +157,81 @@
     "requirements": {
       "implementation": {
         "required": [
-          { "kind": "os", "value": ["windows"], "confidence": "inferred", "source": "the heap is the project's Windows runtime" },
-          { "kind": "tool", "value": "Visual Studio 2022 + CMake/Ninja + Windows SDK 10.0.26100", "confidence": "confirmed", "source": "Xbox2Windows/README.md#first-build" },
-          { "kind": "game_files", "value": "no", "confidence": "confirmed", "source": "issue #126: both words are already published in docs/experiments.md" }
+          {
+            "kind": "os",
+            "value": [
+              "windows"
+            ],
+            "confidence": "inferred",
+            "source": "the heap is the project's Windows runtime"
+          },
+          {
+            "kind": "tool",
+            "value": "Visual Studio 2022 + CMake/Ninja + Windows SDK 10.0.26100",
+            "confidence": "confirmed",
+            "source": "Xbox2Windows/README.md#first-build"
+          },
+          {
+            "kind": "game_files",
+            "value": "no",
+            "confidence": "confirmed",
+            "source": "issue #126: both words are already published in docs/experiments.md"
+          }
         ],
         "optional": [],
         "suggested": [
-          { "kind": "skill", "value": "Reading SlimEra era.h and WinDurango kernelx.h", "confidence": "confirmed", "source": "issue #126 Evidence" }
+          {
+            "kind": "skill",
+            "value": "Reading SlimEra era.h and WinDurango kernelx.h",
+            "confidence": "confirmed",
+            "source": "issue #126 Evidence"
+          }
         ]
       },
       "validation": {
         "required": [
-          { "kind": "os", "value": ["windows"], "confidence": "inferred", "source": "same build" }
+          {
+            "kind": "os",
+            "value": [
+              "windows"
+            ],
+            "confidence": "inferred",
+            "source": "same build"
+          }
         ],
         "optional": [
-          { "kind": "game_files", "value": "unknown", "confidence": "unspecified", "source": "obtaining new words from other callers is not specified" }
+          {
+            "kind": "game_files",
+            "value": "unknown",
+            "confidence": "unspecified",
+            "source": "obtaining new words from other callers is not specified"
+          }
         ],
         "suggested": []
       }
     },
     "acceptance": [
-      { "text": "Completion criterion not defined in the issue (it is a question).", "source": "issue #126", "confidence": "unspecified" }
+      {
+        "text": "Completion criterion not defined in the issue (it is a question).",
+        "source": "issue #126",
+        "confidence": "unspecified"
+      }
     ],
-    "deliverables": ["code", "tests", "knowledge_md"],
-    "sources": [{ "kind": "issue", "ref": "https://github.com/R0Y00/Xbox2Windows/issues/126", "retrieved_at": "2026-11-21" }],
-    "restrictions": ["No game files"]
+    "deliverables": [
+      "code",
+      "tests",
+      "knowledge_md"
+    ],
+    "sources": [
+      {
+        "kind": "issue",
+        "ref": "https://github.com/R0Y00/Xbox2Windows/issues/126",
+        "retrieved_at": "2026-11-21"
+      }
+    ],
+    "restrictions": [
+      "No game files"
+    ]
   },
   {
     "id": "draft:ItsNotRexed/Leonida/system-values",
@@ -126,37 +255,110 @@
     "requirements": {
       "implementation": {
         "required": [
-          { "kind": "tool", "value": "Python 3.11+ (stdlib, python -I)", "confidence": "confirmed", "source": "Leonida/CONTRIBUTING.md" },
-          { "kind": "tool", "value": "LLVM 21+ with the AMDGPU target (llvm-mc)", "confidence": "confirmed", "source": "Leonida/README.md#how-to-build" },
-          { "kind": "tool", "value": "Vulkan SDK (spirv-as, spirv-val)", "confidence": "confirmed", "source": "Leonida/README.md#how-to-build" },
-          { "kind": "game_files", "value": "no", "confidence": "inferred", "source": "GPU- or Mesa-based evidence paths do not use the game (Leonida/CONTRIBUTING.md)" }
+          {
+            "kind": "tool",
+            "value": "Python 3.11+ (stdlib, python -I)",
+            "confidence": "confirmed",
+            "source": "Leonida/CONTRIBUTING.md"
+          },
+          {
+            "kind": "tool",
+            "value": "LLVM 21+ with the AMDGPU target (llvm-mc)",
+            "confidence": "confirmed",
+            "source": "Leonida/README.md#how-to-build"
+          },
+          {
+            "kind": "tool",
+            "value": "Vulkan SDK (spirv-as, spirv-val)",
+            "confidence": "confirmed",
+            "source": "Leonida/README.md#how-to-build"
+          },
+          {
+            "kind": "game_files",
+            "value": "no",
+            "confidence": "inferred",
+            "source": "GPU- or Mesa-based evidence paths do not use the game (Leonida/CONTRIBUTING.md)"
+          }
         ],
         "optional": [
-          { "kind": "os", "value": ["linux", "windows"], "confidence": "confirmed", "source": "build.py requires llvm-mc via WSL or Linux (Leonida/CONTRIBUTING.md)" }
+          {
+            "kind": "os",
+            "value": [
+              "linux",
+              "windows"
+            ],
+            "confidence": "confirmed",
+            "source": "build.py requires llvm-mc via WSL or Linux (Leonida/CONTRIBUTING.md)"
+          }
         ],
         "suggested": [
-          { "kind": "skill", "value": "ISA RDNA2, Mesa ACO/RADV", "confidence": "confirmed", "source": "Leonida/README.md#credits" }
+          {
+            "kind": "skill",
+            "value": "ISA RDNA2, Mesa ACO/RADV",
+            "confidence": "confirmed",
+            "source": "Leonida/README.md#credits"
+          }
         ]
       },
       "validation": {
         "required": [
-          { "kind": "gpu", "value": "physical", "confidence": "confirmed", "source": "check.py runs the tests on the GPU (Leonida/CONTRIBUTING.md)" }
+          {
+            "kind": "gpu",
+            "value": "physical",
+            "confidence": "confirmed",
+            "source": "check.py runs the tests on the GPU (Leonida/CONTRIBUTING.md)"
+          }
         ],
         "optional": [
-          { "kind": "gpu", "value": "amd", "confidence": "confirmed", "source": "wave64 is only exact on AMD (Leonida/README.md line 44)" },
-          { "kind": "game_files", "value": "yes", "confidence": "confirmed", "source": "corpus-count evidence requires shaders.rpf" }
+          {
+            "kind": "gpu",
+            "value": "amd",
+            "confidence": "confirmed",
+            "source": "wave64 is only exact on AMD (Leonida/README.md line 44)"
+          },
+          {
+            "kind": "game_files",
+            "value": "yes",
+            "confidence": "confirmed",
+            "source": "corpus-count evidence requires shaders.rpf"
+          }
         ],
         "suggested": []
       }
     },
     "acceptance": [
-      { "text": "Rule in the contract table of docs/design.md with its form of confirmation.", "source": "Leonida/CONTRIBUTING.md", "confidence": "confirmed" },
-      { "text": "Hand-written .asm fixture with the expected output words; python -m unittest discover -s tests/semantic -v passes.", "source": "Leonida/CONTRIBUTING.md", "confidence": "confirmed" },
-      { "text": "PR states GPU and driver and declares AI use; no skip-list.", "source": "Leonida/AGENTS.md", "confidence": "confirmed" }
+      {
+        "text": "Rule in the contract table of docs/design.md with its form of confirmation.",
+        "source": "Leonida/CONTRIBUTING.md",
+        "confidence": "confirmed"
+      },
+      {
+        "text": "Hand-written .asm fixture with the expected output words; python -m unittest discover -s tests/semantic -v passes.",
+        "source": "Leonida/CONTRIBUTING.md",
+        "confidence": "confirmed"
+      },
+      {
+        "text": "PR states GPU and driver and declares AI use; no skip-list.",
+        "source": "Leonida/AGENTS.md",
+        "confidence": "confirmed"
+      }
     ],
-    "deliverables": ["code", "tests", "knowledge_md"],
-    "sources": [{ "kind": "file", "ref": "Leonida/README.md", "heading": "Want to help?", "lines": "132-134" }],
-    "restrictions": ["No game shaders in any form (Leonida/AGENTS.md)"]
+    "deliverables": [
+      "code",
+      "tests",
+      "knowledge_md"
+    ],
+    "sources": [
+      {
+        "kind": "file",
+        "ref": "Leonida/README.md",
+        "heading": "Want to help?",
+        "lines": "132-134"
+      }
+    ],
+    "restrictions": [
+      "No game shaders in any form (Leonida/AGENTS.md)"
+    ]
   },
   {
     "id": "ItsNotRexed/Leonida#29",
@@ -175,36 +377,86 @@
     "readiness": "ready",
     "state": "open",
     "milestone": "M3-assets",
-    "depends_on": ["breadbbbb/rpf9-explorer#1"],
+    "depends_on": [
+      "breadbbbb/rpf9-explorer#1"
+    ],
     "instructions_md": "# Issue #29\n\nAfter breadbbbb/rpf9-explorer#1 is merged: update the `third_party/rpf9-explorer` submodule, verify model export with the new pin and update the status in the README.",
     "requirements": {
       "implementation": {
         "required": [
-          { "kind": "tool", "value": ".NET 8 SDK (tools/rpf9dump)", "confidence": "confirmed", "source": "Leonida/README.md#how-to-build" },
-          { "kind": "game_files", "value": "no", "confidence": "inferred", "source": "changing the pin and README does not read game files" }
+          {
+            "kind": "tool",
+            "value": ".NET 8 SDK (tools/rpf9dump)",
+            "confidence": "confirmed",
+            "source": "Leonida/README.md#how-to-build"
+          },
+          {
+            "kind": "game_files",
+            "value": "no",
+            "confidence": "inferred",
+            "source": "changing the pin and README does not read game files"
+          }
         ],
         "optional": [],
         "suggested": [
-          { "kind": "os", "value": ["windows"], "confidence": "inferred", "source": "make_game.py is Windows-first (Leonida/AGENTS.md)" }
+          {
+            "kind": "os",
+            "value": [
+              "windows"
+            ],
+            "confidence": "inferred",
+            "source": "make_game.py is Windows-first (Leonida/AGENTS.md)"
+          }
         ]
       },
       "validation": {
         "required": [
-          { "kind": "game_files", "value": "yes", "confidence": "confirmed", "source": "issue #29: verify model export with the new pin" }
+          {
+            "kind": "game_files",
+            "value": "yes",
+            "confidence": "confirmed",
+            "source": "issue #29: verify model export with the new pin"
+          }
         ],
         "optional": [],
         "suggested": [
-          { "kind": "os", "value": ["windows"], "confidence": "inferred", "source": "Leonida/AGENTS.md" }
+          {
+            "kind": "os",
+            "value": [
+              "windows"
+            ],
+            "confidence": "inferred",
+            "source": "Leonida/AGENTS.md"
+          }
         ]
       }
     },
     "acceptance": [
-      { "text": "third_party/rpf9-explorer pin updated, export verified, README status updated.", "source": "issue #29", "confidence": "confirmed" },
-      { "text": "Numeric verification metric.", "source": "issue #29", "confidence": "unspecified" }
+      {
+        "text": "third_party/rpf9-explorer pin updated, export verified, README status updated.",
+        "source": "issue #29",
+        "confidence": "confirmed"
+      },
+      {
+        "text": "Numeric verification metric.",
+        "source": "issue #29",
+        "confidence": "unspecified"
+      }
     ],
-    "deliverables": ["code", "knowledge_md"],
-    "sources": [{ "kind": "issue", "ref": "https://github.com/ItsNotRexed/Leonida/issues/29", "retrieved_at": "2026-11-21" }],
-    "restrictions": ["No exported assets in the PR"]
+    "deliverables": [
+      "code",
+      "knowledge_md"
+    ],
+    "sources": [
+      {
+        "kind": "issue",
+        "ref": "https://github.com/ItsNotRexed/Leonida/issues/29",
+        "retrieved_at": "2026-11-21"
+      }
+    ],
+    "restrictions": [
+      "No exported assets in the PR"
+    ]
   },
   {
     "id": "draft:Freminet/ScarlettX/failing-tests",
@@ -226,12 +478,33 @@
     "depends_on": [],
     "instructions_md": "Grouping parent issue (not executable). README: \"Tests: 20/23 passing (failing: test_d3d12_guest_texture, test_boot_hello_scarlett, test_boot_rt_showcase)\".",
     "requirements": {
-      "implementation": { "required": [], "optional": [], "suggested": [] },
-      "validation": { "required": [], "optional": [], "suggested": [] }
+      "implementation": {
+        "required": [],
+        "optional": [],
+        "suggested": []
+      },
+      "validation": {
+        "required": [],
+        "optional": [],
+        "suggested": []
+      }
     },
-    "acceptance": [{ "text": "All subissues completed.", "source": "coordinator", "confidence": "confirmed" }],
+    "acceptance": [
+      {
+        "text": "All subissues completed.",
+        "source": "coordinator",
+        "confidence": "confirmed"
+      }
+    ],
     "deliverables": [],
-    "sources": [{ "kind": "file", "ref": "ScarlettX/README.md", "heading": "Status", "lines": "19" }]
+    "sources": [
+      {
+        "kind": "file",
+        "ref": "ScarlettX/README.md",
+        "heading": "Status",
+        "lines": "19"
+      }
+    ]
   },
   {
     "id": "draft:Freminet/ScarlettX/guest-texture-upload",
@@ -255,31 +528,87 @@
     "requirements": {
       "implementation": {
         "required": [
-          { "kind": "os", "value": ["windows"], "confidence": "confirmed", "source": "ScarlettX/README.md#building--running-tests" },
-          { "kind": "tool", "value": "CMake 3.20+, Ninja, C++20 (MinGW-w64 GCC 13+ or MSVC 2022)", "confidence": "confirmed", "source": "ScarlettX/README.md#building--running-tests" },
-          { "kind": "game_files", "value": "no", "confidence": "confirmed", "source": "ScarlettX/README.md: tests use synthetic titles" }
+          {
+            "kind": "os",
+            "value": [
+              "windows"
+            ],
+            "confidence": "confirmed",
+            "source": "ScarlettX/README.md#building--running-tests"
+          },
+          {
+            "kind": "tool",
+            "value": "CMake 3.20+, Ninja, C++20 (MinGW-w64 GCC 13+ or MSVC 2022)",
+            "confidence": "confirmed",
+            "source": "ScarlettX/README.md#building--running-tests"
+          },
+          {
+            "kind": "game_files",
+            "value": "no",
+            "confidence": "confirmed",
+            "source": "ScarlettX/README.md: tests use synthetic titles"
+          }
         ],
         "optional": [],
         "suggested": [
-          { "kind": "gpu", "value": "none", "confidence": "inferred", "source": "requirements list D3D12 runtime + WARP" }
+          {
+            "kind": "gpu",
+            "value": "none",
+            "confidence": "inferred",
+            "source": "requirements list D3D12 runtime + WARP"
+          }
         ]
       },
       "validation": {
         "required": [
-          { "kind": "os", "value": ["windows"], "confidence": "confirmed", "source": "ScarlettX/README.md" },
-          { "kind": "game_files", "value": "no", "confidence": "confirmed", "source": "ScarlettX/README.md" }
+          {
+            "kind": "os",
+            "value": [
+              "windows"
+            ],
+            "confidence": "confirmed",
+            "source": "ScarlettX/README.md"
+          },
+          {
+            "kind": "game_files",
+            "value": "no",
+            "confidence": "confirmed",
+            "source": "ScarlettX/README.md"
+          }
         ],
         "optional": [],
         "suggested": []
       }
     },
     "acceptance": [
-      { "text": "test_d3d12_guest_texture passes in ctest --test-dir build --output-on-failure.", "source": "ScarlettX/README.md line 86", "confidence": "confirmed" },
-      { "text": "The other tests keep passing.", "source": "coordinator", "confidence": "inferred" },
-      { "text": "Status regenerated with python tools/generate_status.py --build-dir <build>.", "source": "ScarlettX/README.md#status", "confidence": "confirmed" }
+      {
+        "text": "test_d3d12_guest_texture passes in ctest --test-dir build --output-on-failure.",
+        "source": "ScarlettX/README.md line 86",
+        "confidence": "confirmed"
+      },
+      {
+        "text": "The other tests keep passing.",
+        "source": "coordinator",
+        "confidence": "inferred"
+      },
+      {
+        "text": "Status regenerated with python tools/generate_status.py --build-dir <build>.",
+        "source": "ScarlettX/README.md#status",
+        "confidence": "confirmed"
+      }
     ],
-    "deliverables": ["code", "tests"],
-    "sources": [{ "kind": "file", "ref": "ScarlettX/README.md", "heading": "Current Limitations", "lines": "86" }]
+    "deliverables": [
+      "code",
+      "tests"
+    ],
+    "sources": [
+      {
+        "kind": "file",
+        "ref": "ScarlettX/README.md",
+        "heading": "Current Limitations",
+        "lines": "86"
+      }
+    ]
   },
   {
     "id": "draft:Freminet/ScarlettX/child-process-boot",
@@ -303,28 +632,75 @@
     "requirements": {
       "implementation": {
         "required": [
-          { "kind": "os", "value": ["windows"], "confidence": "confirmed", "source": "ScarlettX/README.md line 87 (observed on Windows 11 build 26100)" },
-          { "kind": "tool", "value": "CMake 3.20+, Ninja, C++20 (MinGW-w64 GCC 13+ or MSVC 2022)", "confidence": "confirmed", "source": "ScarlettX/README.md" },
-          { "kind": "game_files", "value": "no", "confidence": "confirmed", "source": "ScarlettX/README.md" }
+          {
+            "kind": "os",
+            "value": [
+              "windows"
+            ],
+            "confidence": "confirmed",
+            "source": "ScarlettX/README.md line 87 (observed on Windows 11 build 26100)"
+          },
+          {
+            "kind": "tool",
+            "value": "CMake 3.20+, Ninja, C++20 (MinGW-w64 GCC 13+ or MSVC 2022)",
+            "confidence": "confirmed",
+            "source": "ScarlettX/README.md"
+          },
+          {
+            "kind": "game_files",
+            "value": "no",
+            "confidence": "confirmed",
+            "source": "ScarlettX/README.md"
+          }
         ],
         "optional": [],
         "suggested": []
       },
       "validation": {
         "required": [
-          { "kind": "os", "value": ["windows"], "confidence": "confirmed", "source": "ScarlettX/README.md line 87" },
-          { "kind": "hardware", "value": "Machine with C:\\Windows\\System32\\xgameruntime.dll present", "confidence": "confirmed", "source": "ScarlettX/README.md line 87" }
+          {
+            "kind": "os",
+            "value": [
+              "windows"
+            ],
+            "confidence": "confirmed",
+            "source": "ScarlettX/README.md line 87"
+          },
+          {
+            "kind": "hardware",
+            "value": "Machine with C:\\Windows\\System32\\xgameruntime.dll present",
+            "confidence": "confirmed",
+            "source": "ScarlettX/README.md line 87"
+          }
         ],
         "optional": [],
         "suggested": []
       }
     },
     "acceptance": [
-      { "text": "test_boot_hello_scarlett and test_boot_rt_showcase pass on a machine with the DLL in System32.", "source": "ScarlettX/README.md line 87", "confidence": "confirmed" },
-      { "text": "Preferred approach (DLL search order vs. copying shims).", "source": "ScarlettX/README.md", "confidence": "unspecified" }
+      {
+        "text": "test_boot_hello_scarlett and test_boot_rt_showcase pass on a machine with the DLL in System32.",
+        "source": "ScarlettX/README.md line 87",
+        "confidence": "confirmed"
+      },
+      {
+        "text": "Preferred approach (DLL search order vs. copying shims).",
+        "source": "ScarlettX/README.md",
+        "confidence": "unspecified"
+      }
     ],
-    "deliverables": ["code", "tests"],
-    "sources": [{ "kind": "file", "ref": "ScarlettX/README.md", "heading": "Current Limitations", "lines": "87" }]
+    "deliverables": [
+      "code",
+      "tests"
+    ],
+    "sources": [
+      {
+        "kind": "file",
+        "ref": "ScarlettX/README.md",
+        "heading": "Current Limitations",
+        "lines": "87"
+      }
+    ]
   },
   {
     "id": "breadbbbb/rpf9-explorer#1",
@@ -348,35 +724,97 @@
     "requirements": {
       "implementation": {
         "required": [
-          { "kind": "tool", "value": ".NET 10 SDK (viewer)", "confidence": "confirmed", "source": "rpf9-explorer/README.md#build-from-source; PR #1 Verification" },
-          { "kind": "tool", "value": ".NET 8 SDK (IndexBuilder, rpf9dump)", "confidence": "confirmed", "source": "PR #1 Verification" },
-          { "kind": "game_files", "value": "no", "confidence": "confirmed", "source": "PR #1: the smoke fixture is asset-free" }
+          {
+            "kind": "tool",
+            "value": ".NET 10 SDK (viewer)",
+            "confidence": "confirmed",
+            "source": "rpf9-explorer/README.md#build-from-source; PR #1 Verification"
+          },
+          {
+            "kind": "tool",
+            "value": ".NET 8 SDK (IndexBuilder, rpf9dump)",
+            "confidence": "confirmed",
+            "source": "PR #1 Verification"
+          },
+          {
+            "kind": "game_files",
+            "value": "no",
+            "confidence": "confirmed",
+            "source": "PR #1: the smoke fixture is asset-free"
+          }
         ],
         "optional": [
-          { "kind": "game_files", "value": "yes", "confidence": "confirmed", "source": "PR #1: reproducing 190.792/190.792 requires the 10 RPF9 files" }
+          {
+            "kind": "game_files",
+            "value": "yes",
+            "confidence": "confirmed",
+            "source": "PR #1: reproducing 190.792/190.792 requires the 10 RPF9 files"
+          }
         ],
         "suggested": [
-          { "kind": "os", "value": ["windows"], "confidence": "inferred", "source": "author verified on Windows 11 x64; the viewer is WPF" }
+          {
+            "kind": "os",
+            "value": [
+              "windows"
+            ],
+            "confidence": "inferred",
+            "source": "author verified on Windows 11 x64; the viewer is WPF"
+          }
         ]
       },
       "validation": {
         "required": [
-          { "kind": "tool", "value": ".NET 10 and .NET 8 SDK", "confidence": "confirmed", "source": "PR #1" }
+          {
+            "kind": "tool",
+            "value": ".NET 10 and .NET 8 SDK",
+            "confidence": "confirmed",
+            "source": "PR #1"
+          }
         ],
         "optional": [],
         "suggested": [
-          { "kind": "os", "value": ["windows"], "confidence": "inferred", "source": "PR #1" }
+          {
+            "kind": "os",
+            "value": [
+              "windows"
+            ],
+            "confidence": "inferred",
+            "source": "PR #1"
+          }
         ]
       }
     },
     "acceptance": [
-      { "text": "Smoke fixture passes (discovery, mixed blocks, packed triangles, cache v1/v2, byte-for-byte readback, negative rejections).", "source": "PR #1 Verification", "confidence": "confirmed" },
-      { "text": "Release builds of the viewer, IndexBuilder and rpf9dump pass.", "source": "PR #1 Verification", "confidence": "confirmed" },
-      { "text": "Maintainer's merge criterion.", "source": "rpf9-explorer has no CONTRIBUTING", "confidence": "unspecified" }
+      {
+        "text": "Smoke fixture passes (discovery, mixed blocks, packed triangles, cache v1/v2, byte-for-byte readback, negative rejections).",
+        "source": "PR #1 Verification",
+        "confidence": "confirmed"
+      },
+      {
+        "text": "Release builds of the viewer, IndexBuilder and rpf9dump pass.",
+        "source": "PR #1 Verification",
+        "confidence": "confirmed"
+      },
+      {
+        "text": "Maintainer's merge criterion.",
+        "source": "rpf9-explorer has no CONTRIBUTING",
+        "confidence": "unspecified"
+      }
     ],
-    "deliverables": ["report", "knowledge_md"],
-    "sources": [{ "kind": "pull_request", "ref": "https://github.com/breadbbbb/rpf9-explorer/pull/1", "retrieved_at": "2026-11-21" }],
-    "restrictions": ["Do not attach extracted models/textures"]
+    "deliverables": [
+      "report",
+      "knowledge_md"
+    ],
+    "sources": [
+      {
+        "kind": "pull_request",
+        "ref": "https://github.com/breadbbbb/rpf9-explorer/pull/1",
+        "retrieved_at": "2026-11-21"
+      }
+    ],
+    "restrictions": [
+      "Do not attach extracted models/textures"
+    ]
   },
   {
     "id": "draft:breadbbbb/rpf9-explorer/bcpack-decoder",
@@ -400,28 +838,74 @@
     "requirements": {
       "implementation": {
         "required": [
-          { "kind": "tool", "value": ".NET 10 SDK", "confidence": "confirmed", "source": "rpf9-explorer/README.md#build-from-source" }
+          {
+            "kind": "tool",
+            "value": ".NET 10 SDK",
+            "confidence": "confirmed",
+            "source": "rpf9-explorer/README.md#build-from-source"
+          }
         ],
         "optional": [
-          { "kind": "os", "value": ["windows"], "confidence": "confirmed", "source": "the app build is Windows (rpf9-explorer/README.md)" }
+          {
+            "kind": "os",
+            "value": [
+              "windows"
+            ],
+            "confidence": "confirmed",
+            "source": "the app build is Windows (rpf9-explorer/README.md)"
+          }
         ],
         "suggested": [
-          { "kind": "tool", "value": "Ghidra or IDA (decoder analysis)", "confidence": "confirmed", "source": "user decision 2026-11-21 (not cited by upstream sources)" },
-          { "kind": "skill", "value": "Xbox2Windows BCPack fixtures as reference", "confidence": "inferred", "source": "Xbox2Windows/README.md#choose-an-experiment" }
+          {
+            "kind": "tool",
+            "value": "Ghidra or IDA (decoder analysis)",
+            "confidence": "confirmed",
+            "source": "user decision 2026-11-21 (not cited by upstream sources)"
+          },
+          {
+            "kind": "skill",
+            "value": "Xbox2Windows BCPack fixtures as reference",
+            "confidence": "inferred",
+            "source": "Xbox2Windows/README.md#choose-an-experiment"
+          }
         ]
       },
       "validation": {
         "required": [
-          { "kind": "game_files", "value": "unknown", "confidence": "unspecified", "source": "validating against real textures is not specified" }
+          {
+            "kind": "game_files",
+            "value": "unknown",
+            "confidence": "unspecified",
+            "source": "validating against real textures is not specified"
+          }
         ],
         "optional": [],
         "suggested": []
       }
     },
-    "acceptance": [{ "text": "No source defines the criterion.", "source": "rpf9-explorer/README.md", "confidence": "unspecified" }],
-    "deliverables": ["code", "tests", "knowledge_md"],
-    "sources": [{ "kind": "file", "ref": "rpf9-explorer/README.md", "heading": "Preview models", "lines": "66" }],
-    "restrictions": ["Analysis only of binaries the participant legitimately owns; no decryption or protection circumvention"]
+    "acceptance": [
+      {
+        "text": "No source defines the criterion.",
+        "source": "rpf9-explorer/README.md",
+        "confidence": "unspecified"
+      }
+    ],
+    "deliverables": [
+      "code",
+      "tests",
+      "knowledge_md"
+    ],
+    "sources": [
+      {
+        "kind": "file",
+        "ref": "rpf9-explorer/README.md",
+        "heading": "Preview models",
+        "lines": "66"
+      }
+    ],
+    "restrictions": [
+      "Analysis only of binaries the participant legitimately owns; no decryption or protection circumvention"
+    ]
   },
   {
     "id": "draft:realdody/americas-recomp/f16-interpolation",
@@ -445,37 +929,106 @@
     "requirements": {
       "implementation": {
         "required": [
-          { "kind": "gpu", "value": "amd", "confidence": "confirmed", "source": "docs/dev/HW_ORACLE.md (AMD driver, HIP/comgr or HSA)" },
-          { "kind": "tool", "value": "Hardware oracle (oracle_hip.py on Windows, oracle.c/HSA on Linux)", "confidence": "confirmed", "source": "docs/dev/HW_ORACLE.md" },
-          { "kind": "game_files", "value": "no", "confidence": "inferred", "source": "measuring the rounding does not use the corpus" }
+          {
+            "kind": "gpu",
+            "value": "amd",
+            "confidence": "confirmed",
+            "source": "docs/dev/HW_ORACLE.md (AMD driver, HIP/comgr or HSA)"
+          },
+          {
+            "kind": "tool",
+            "value": "Hardware oracle (oracle_hip.py on Windows, oracle.c/HSA on Linux)",
+            "confidence": "confirmed",
+            "source": "docs/dev/HW_ORACLE.md"
+          },
+          {
+            "kind": "game_files",
+            "value": "no",
+            "confidence": "inferred",
+            "source": "measuring the rounding does not use the corpus"
+          }
         ],
         "optional": [
-          { "kind": "os", "value": ["windows", "linux"], "confidence": "confirmed", "source": "docs/dev/HW_ORACLE.md" },
-          { "kind": "tool", "value": "Vulkan SDK (glslangValidator) + exec.exe (build_msvc.py --with-exec)", "confidence": "confirmed", "source": "tools/xbox/README.md" }
+          {
+            "kind": "os",
+            "value": [
+              "windows",
+              "linux"
+            ],
+            "confidence": "confirmed",
+            "source": "docs/dev/HW_ORACLE.md"
+          },
+          {
+            "kind": "tool",
+            "value": "Vulkan SDK (glslangValidator) + exec.exe (build_msvc.py --with-exec)",
+            "confidence": "confirmed",
+            "source": "tools/xbox/README.md"
+          }
         ],
         "suggested": [
-          { "kind": "hardware", "value": "Whether measuring on PC RDNA2 represents the Xbox", "confidence": "unspecified", "source": "HW_ORACLE.md: gfx1013 not measured" }
+          {
+            "kind": "hardware",
+            "value": "Whether measuring on PC RDNA2 represents the Xbox",
+            "confidence": "unspecified",
+            "source": "HW_ORACLE.md: gfx1013 not measured"
+          }
         ]
       },
       "validation": {
         "required": [
-          { "kind": "gpu", "value": "amd", "confidence": "confirmed", "source": "CONTRIBUTING.md: reviewers check semantics on hardware" }
+          {
+            "kind": "gpu",
+            "value": "amd",
+            "confidence": "confirmed",
+            "source": "CONTRIBUTING.md: reviewers check semantics on hardware"
+          }
         ],
         "optional": [
-          { "kind": "game_files", "value": "yes", "confidence": "confirmed", "source": "reporting the gain on the pixel shader corpus requires shaders.rpf" }
+          {
+            "kind": "game_files",
+            "value": "yes",
+            "confidence": "confirmed",
+            "source": "reporting the gain on the pixel shader corpus requires shaders.rpf"
+          }
         ],
         "suggested": []
       }
     },
     "acceptance": [
-      { "text": "Semantics citing the source (hardware: GPU and what was checked; or ISA/LLVM/ACO/Mesa); anything unverified goes to technical debt.", "source": "americas-recomp/CONTRIBUTING.md", "confidence": "confirmed" },
-      { "text": "PR with the GPUs tested and AI-assisted lines filled in.", "source": "americas-recomp/AGENTS.md", "confidence": "confirmed" },
-      { "text": "Replace the opt-in with a measured model.", "source": "coordinator", "confidence": "inferred" }
+      {
+        "text": "Semantics citing the source (hardware: GPU and what was checked; or ISA/LLVM/ACO/Mesa); anything unverified goes to technical debt.",
+        "source": "americas-recomp/CONTRIBUTING.md",
+        "confidence": "confirmed"
+      },
+      {
+        "text": "PR with the GPUs tested and AI-assisted lines filled in.",
+        "source": "americas-recomp/AGENTS.md",
+        "confidence": "confirmed"
+      },
+      {
+        "text": "Replace the opt-in with a measured model.",
+        "source": "coordinator",
+        "confidence": "inferred"
+      }
     ],
-    "deliverables": ["code", "tests", "knowledge_md"],
+    "deliverables": [
+      "code",
+      "tests",
+      "knowledge_md"
+    ],
     "sources": [
-      { "kind": "file", "ref": "americas-recomp/README.md", "heading": "What does not work yet", "lines": "43" },
-      { "kind": "file", "ref": "americas-recomp/README.md", "heading": "Assumptions (not verified on hardware)", "lines": "53" }
+      {
+        "kind": "file",
+        "ref": "americas-recomp/README.md",
+        "heading": "What does not work yet",
+        "lines": "43"
+      },
+      {
+        "kind": "file",
+        "ref": "americas-recomp/README.md",
+        "heading": "Assumptions (not verified on hardware)",
+        "lines": "53"
+      }
     ]
   },
   {
@@ -500,29 +1053,73 @@
     "requirements": {
       "implementation": {
         "required": [
-          { "kind": "os", "value": ["windows"], "confidence": "inferred", "source": "Windows DLL stand-in" },
-          { "kind": "game_files", "value": "no", "confidence": "inferred", "source": "implementing does not require the game" }
+          {
+            "kind": "os",
+            "value": [
+              "windows"
+            ],
+            "confidence": "inferred",
+            "source": "Windows DLL stand-in"
+          },
+          {
+            "kind": "game_files",
+            "value": "no",
+            "confidence": "inferred",
+            "source": "implementing does not require the game"
+          }
         ],
         "optional": [],
         "suggested": [
-          { "kind": "skill", "value": "Compare with ScarlettX's xgameruntime (XTaskQueue, XAsync, XUser, XSystem)", "confidence": "inferred", "source": "ScarlettX/README.md" }
+          {
+            "kind": "skill",
+            "value": "Compare with ScarlettX's xgameruntime (XTaskQueue, XAsync, XUser, XSystem)",
+            "confidence": "inferred",
+            "source": "ScarlettX/README.md"
+          }
         ]
       },
       "validation": {
         "required": [],
         "optional": [
-          { "kind": "game_files", "value": "yes", "confidence": "confirmed", "source": "README: real use only when the executable is available" }
+          {
+            "kind": "game_files",
+            "value": "yes",
+            "confidence": "confirmed",
+            "source": "README: real use only when the executable is available"
+          }
         ],
         "suggested": []
       }
     },
     "acceptance": [
-      { "text": "An unimplemented method fails; never return fabricated success; general behavior, not that of one title.", "source": "americas-recomp/AGENTS.md", "confidence": "confirmed" },
-      { "text": "Conventional Commits, no code comments, check_conventions.py, complete PR template.", "source": "americas-recomp/AGENTS.md", "confidence": "confirmed" },
-      { "text": "Whether the AnyPS5 rules fully apply to tools/xbox.", "source": "americas-recomp/CONTRIBUTING.md", "confidence": "unspecified" }
+      {
+        "text": "An unimplemented method fails; never return fabricated success; general behavior, not that of one title.",
+        "source": "americas-recomp/AGENTS.md",
+        "confidence": "confirmed"
+      },
+      {
+        "text": "Conventional Commits, no code comments, check_conventions.py, complete PR template.",
+        "source": "americas-recomp/AGENTS.md",
+        "confidence": "confirmed"
+      },
+      {
+        "text": "Whether the AnyPS5 rules fully apply to tools/xbox.",
+        "source": "americas-recomp/CONTRIBUTING.md",
+        "confidence": "unspecified"
+      }
     ],
-    "deliverables": ["code", "tests"],
-    "sources": [{ "kind": "file", "ref": "americas-recomp/README.md", "heading": "What is built", "lines": "37" }]
+    "deliverables": [
+      "code",
+      "tests"
+    ],
+    "sources": [
+      {
+        "kind": "file",
+        "ref": "americas-recomp/README.md",
+        "heading": "What is built",
+        "lines": "37"
+      }
+    ]
   },
   {
     "id": "local:plan/bootstrap-issues",
@@ -544,13 +1141,85 @@
     "depends_on": [],
     "instructions_md": "# Initial planning\n\n1. `get_planning_context`.\n2. For each `draft:*`, propose `create_issue` with `replaces_draft` (in the technical fork, when one exists) or keep it as a draft with a justification.\n3. Define the acceptance criterion for `R0Y00/Xbox2Windows#126` (currently `needs_info`).\n4. Split `draft:realdody/americas-recomp/xgameruntime-standin` into subissues under a grouping.\n5. `validate_planning_proposal` and open the planning PR in the coordinator repository.",
     "requirements": {
-      "implementation": { "required": [], "optional": [], "suggested": [] },
-      "validation": { "required": [], "optional": [], "suggested": [] }
+      "implementation": {
+        "required": [],
+        "optional": [],
+        "suggested": []
+      },
+      "validation": {
+        "required": [],
+        "optional": [],
+        "suggested": []
+      }
     },
     "acceptance": [
-      { "text": "Valid proposal according to schemas/planning-proposal.schema.json, opened as a PR in the coordinator repository.", "source": "docs/SPEC.md", "confidence": "confirmed" }
+      {
+        "text": "Valid proposal according to schemas/planning-proposal.schema.json, opened as a PR in the coordinator repository.",
+        "source": "docs/SPEC.md",
+        "confidence": "confirmed"
+      }
     ],
-    "deliverables": ["planning_proposal"],
-    "sources": [{ "kind": "coordinator", "ref": "docs/CHALLENGES.md" }]
+    "deliverables": [
+      "planning_proposal"
+    ],
+    "sources": [
+      {
+        "kind": "coordinator",
+        "ref": "docs/CHALLENGES.md"
+      }
+    ]
+  },
+  {
+    "id": "local:plan/upstream-cleanup",
+    "repo": null,
+    "fork_repo": null,
+    "github_kind": null,
+    "url": null,
+    "title": "Reconcile the task stock with the original repositories and close what upstream already solved",
+    "kind": "issue",
+    "parent": null,
+    "type": "strategic",
+    "role": "plan",
+    "difficulty": "medium",
+    "difficulty_source": "estimate",
+    "priority": "p0",
+    "readiness": "ready",
+    "state": "open",
+    "milestone": "M1-entrada",
+    "depends_on": [],
+    "instructions_md": "# Upstream reconciliation of the stock\n\n1. `get_planning_context` and `get_upstream_status`: every open task with its upstream HEAD, automatic status and evidence.\n2. For each task whose acceptance criteria are already met upstream (resolved), obsolete or only partially open, check the evidence (commit, PR, file) yourself and record it with `record_upstream_verdict`.\n3. Propose `close_issue` (with the evidence in `reason`) for resolved/obsolete tasks; redefine partially met ones with `create_issue` for the remaining scope.\n4. Add the operational task for the public catalog: `GET /api/tasks` returns every task including cancelled and done ones, so the landing page miscounts. Add an optional `status` query filter (comma-separated, validated against the known statuses, 400 on an unknown one) plus a `counts` object by status, with tests. Target repository: `gta6-forks/gta6-coordinator`.\n5. `validate_planning_proposal`, then deliver the proposal file through your planning workspace.",
+    "requirements": {
+      "implementation": {
+        "required": [],
+        "optional": [],
+        "suggested": []
+      },
+      "validation": {
+        "required": [],
+        "optional": [],
+        "suggested": []
+      }
+    },
+    "acceptance": [
+      {
+        "text": "Every closed task cites upstream evidence (commit, PR or file) in its reason; no task is closed on title or keyword alone.",
+        "source": "docs/UPSTREAM.md",
+        "confidence": "confirmed"
+      },
+      {
+        "text": "Valid proposal according to schemas/planning-proposal.schema.json, opened as a PR in the coordinator repository.",
+        "source": "docs/SPEC.md",
+        "confidence": "confirmed"
+      }
+    ],
+    "deliverables": [
+      "planning_proposal"
+    ],
+    "sources": [
+      {
+        "kind": "coordinator",
+        "ref": "docs/UPSTREAM.md"
+      }
+    ]
   }
 ]

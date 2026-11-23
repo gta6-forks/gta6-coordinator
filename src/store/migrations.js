@@ -172,6 +172,54 @@ export const MIGRATIONS = [
       )`,
     ],
   },
+  {
+    version: 3,
+    name: 'upstream_reconciliation',
+    statements: [
+      // Last observed state of each ORIGINAL repository. A failed check never overwrites the last good snapshot.
+      `CREATE TABLE upstream_repos (
+        repo TEXT PRIMARY KEY,
+        branch TEXT,               -- tracked branch: UPSTREAM_BRANCHES override, else the default branch
+        default_branch TEXT,
+        head_sha TEXT,
+        head_committed_at TEXT,
+        head_message TEXT,
+        archived INTEGER NOT NULL DEFAULT 0,
+        last_attempt_at INTEGER,
+        last_success_at INTEGER,
+        last_error TEXT,
+        consecutive_failures INTEGER NOT NULL DEFAULT 0,
+        next_check_after INTEGER
+      )`,
+      // Per task: automatic signals/evidence against the upstream, plus the planner verdict currently in force.
+      `CREATE TABLE upstream_task_checks (
+        task_id TEXT PRIMARY KEY,
+        upstream_repo TEXT,
+        auto_status TEXT NOT NULL,
+        auto_reasons_json TEXT NOT NULL,
+        evidence_json TEXT NOT NULL,
+        baseline_json TEXT NOT NULL,
+        fingerprint TEXT NOT NULL,
+        basis_sha TEXT,
+        checked_at INTEGER NOT NULL,
+        changed_at INTEGER NOT NULL,
+        verdict_id TEXT
+      )`,
+      // Append-only history of planner verdicts (never deleted or edited).
+      `CREATE TABLE upstream_verdicts (
+        id TEXT PRIMARY KEY,
+        task_id TEXT NOT NULL,
+        status TEXT NOT NULL CHECK (status IN ('valid','resolved_upstream','obsolete','partially_met','needs_replan')),
+        basis_sha TEXT NOT NULL,
+        fingerprint TEXT NOT NULL,
+        participant_id TEXT NOT NULL,
+        data_json TEXT NOT NULL,
+        created_at INTEGER NOT NULL
+      )`,
+      `CREATE INDEX upstream_verdicts_task ON upstream_verdicts(task_id, created_at)`,
+      `CREATE TABLE upstream_http_cache (url TEXT PRIMARY KEY, etag TEXT, body_json TEXT NOT NULL, fetched_at INTEGER NOT NULL)`,
+    ],
+  },
 ];
 
 export function migrate(store) {

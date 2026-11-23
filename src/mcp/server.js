@@ -1,7 +1,7 @@
 // MCP over Streamable HTTP (JSON responses, no server-initiated streams), JSON-RPC 2.0.
 // Auth: `Authorization: Bearer g6a_…|g6g_…` issued by /auth/anonymous or the Google OIDC flow.
 import { AppError, assertNoSecrets } from '../util.js';
-import { authenticate, createGoogleLink, setProfile } from '../services/auth.js';
+import { authenticate, checkRateLimit, createGoogleLink, setProfile } from '../services/auth.js';
 import { googleConfigured } from '../auth/google-oidc.js';
 import { claim, currentReservation, listTasks, publicTask, release } from '../services/scheduler.js';
 import { getTask } from '../services/catalog.js';
@@ -9,7 +9,12 @@ import { submitCompletion, submitVerification } from '../services/review.js';
 import { planningContext, submitProposal } from '../services/planning.js';
 import { dispatchIntegration, getWorkspace, myWorkspace, workspaceRemote } from '../services/workspace.js';
 import { byModel, byProject, byTask, history, leaderboard, metricsBundle, reportUsage, summary } from '../services/metrics.js';
+import { checkUpstream, ensureFresh, upstreamConfig, recordVerdict, taskUpstreamSummary, upstreamIndex, upstreamMap, upstreamOf, upstreamReport } from '../services/upstream.js';
+import { loadTasks } from '../services/catalog.js';
 import { completionSchema, planningProposalSchema, profileSchema, usageReportSchema, verificationSchema } from '../schema/schemas.js';
+
+// In `report` mode the cron keeps the snapshot; claims never wait on GitHub.
+const enforcingUpstream = (ctx) => upstreamConfig(ctx.env).mode.startsWith('enforce');
 
 export const SUPPORTED_PROTOCOL_VERSIONS = ['2025-06-18', '2025-03-26', '2024-11-05'];
 export const SERVER_INFO = { name: 'gta6-explorer-coordinator', version: '0.1.0' };
@@ -29,6 +34,22 @@ const filtersSchema = {
     gpu: { type: 'string' },
     needs_game_files: { enum: ['yes', 'no', 'unknown', 'unspecified'] },
   },
+};
+
+/** Upstream of one task (for a targeted pre-claim check), or null to check them all. */
+function upstreamRepos(ctx, taskId) {
+  if (!taskId) return null;
+  const t = getTask(ctx.store, taskId);
+  if (!t) return null;
+  const up = upstreamOf(t.data, upstreamMap(ctx.env, loadTasks(ctx.store)), String(ctx.env.TASK_REPOS ?? '').split(',').map((x) => x.trim()).filter(Boolean));
+  return up ? [up] : [];
+}
+
+const evidenceItem = {
+  type: 'object',
+  additionalProperties: false,
+  required: ['kind', 'ref'],
+  properties: { kind: { enum: ['commit', 'pr', 'issue', 'file', 'other'] }, ref: { type: 'string', maxLength: 300 }, note: { type: 'string', maxLength: 500 } },
 };
 
 const strip = ({ $schema, $id, title, $defs, ...rest }) => ({ ...rest, ...($defs ? { $defs } : {}) });
@@ -76,7 +97,7 @@ export const TOOLS = [
     run: (ctx, p, args) => {
       const t = getTask(ctx.store, args.task_id);
       if (!t) throw new AppError('task_not_found', `unknown task ${args.task_id}`, 404);
-      return { task: publicTask(t) };
+      return { task: publicTask(t, { upstream: taskUpstreamSummary(upstreamIndex(ctx), t) }) };
     },
   },
   {
@@ -87,7 +108,10 @@ export const TOOLS = [
       additionalProperties: false,
       properties: { filters: filtersSchema, idempotency_key: { type: 'string', minLength: 8, maxLength: 100 } },
     },
-    run: (ctx, p, args) => claim(ctx, p, { filters: args.filters ?? {}, idempotency_key: args.idempotency_key ?? null }),
+    run: async (ctx, p, args) => {
+      if (enforcingUpstream(ctx)) await ensureFresh(ctx); // mandatory upstream check before distributing (bounded; see UPSTREAM_FRESH_MINUTES)
+      return claim(ctx, p, { filters: args.filters ?? {}, idempotency_key: args.idempotency_key ?? null });
+    },
   },
   {
     name: 'claim_task',
@@ -98,7 +122,11 @@ export const TOOLS = [
       required: ['task_id'],
       properties: { task_id: { type: 'string' }, idempotency_key: { type: 'string', minLength: 8, maxLength: 100 } },
     },
-    run: (ctx, p, args) => claim(ctx, p, { task_id: args.task_id, idempotency_key: args.idempotency_key ?? null }),
+    run: async (ctx, p, args) => {
+      const repos = upstreamRepos(ctx, args.task_id);
+      if (repos?.length && enforcingUpstream(ctx)) await ensureFresh(ctx, repos);
+      return claim(ctx, p, { task_id: args.task_id, idempotency_key: args.idempotency_key ?? null });
+    },
   },
   {
     name: 'release_reservation',
@@ -179,9 +207,13 @@ export const TOOLS = [
   },
   {
     name: 'get_planning_context',
-    description: 'Planner view (Google login): roadmap, milestones, every task with status/dependencies, reviews, failures and feedback.',
+    description: 'Planner view (Google login): roadmap, milestones, every task with status/dependencies, reviews, failures and feedback, plus the reconciliation with the ORIGINAL upstream repositories (HEAD sha, last check, per-task evidence). The upstream is re-checked first when the snapshot is old.',
     inputSchema: { type: 'object', properties: {}, additionalProperties: false },
-    run: (ctx, p) => planningContext(ctx, p),
+    run: async (ctx, p) => {
+      planningContext(ctx, p); // auth first (throws for anonymous) before spending GitHub requests
+      await ensureFresh(ctx);
+      return planningContext(ctx, p);
+    },
   },
   {
     name: 'validate_planning_proposal',
@@ -192,7 +224,54 @@ export const TOOLS = [
       required: ['proposal'],
       properties: { proposal: strip(planningProposalSchema) },
     },
-    run: (ctx, p, args) => submitProposal(ctx, p, args.proposal),
+    run: async (ctx, p, args) => {
+      if (p.kind === 'google') await ensureFresh(ctx);
+      return submitProposal(ctx, p, args.proposal);
+    },
+  },
+  {
+    name: 'get_upstream_status',
+    description: 'Reconciliation with the ORIGINAL repositories: per upstream the HEAD sha and last successful check; per task the status (valid, needs_review, partially_met, needs_replan, obsolete, resolved_upstream, unchecked), whether it comes from the automatic check or a planner verdict, the reasons and the evidence (commits, PRs, files) with timestamps.',
+    inputSchema: { type: 'object', additionalProperties: false, properties: { task_id: { type: 'string' } } },
+    run: (ctx, p, args) => upstreamReport(ctx, { task_id: args.task_id ?? null }),
+  },
+  {
+    name: 'check_upstream',
+    description: 'Planner (Google login): re-check the upstream repositories now (all, or one) and refresh every task\'s evidence. Uses conditional requests and respects GitHub rate limits; at most once per 5 minutes per planner.',
+    inputSchema: { type: 'object', additionalProperties: false, properties: { repo: { type: 'string' } } },
+    run: async (ctx, p, args) => {
+      if (p.kind !== 'google') throw new AppError('requires_google_login', 'forcing an upstream check is a planning activity (Google login)', 403);
+      if (!checkRateLimit(ctx, `upstream_check:${p.id}`, 1, 5 * 60_000)) throw new AppError('rate_limited', 'check_upstream at most once per 5 minutes; use get_upstream_status meanwhile', 429);
+      const run = await checkUpstream(ctx, { repos: args.repo ? [args.repo] : null, force: true, reason: `planner:${p.id}` });
+      return { run, report: upstreamReport(ctx) };
+    },
+  },
+  {
+    name: 'record_upstream_verdict',
+    description: 'Planner (Google login): after reviewing the upstream evidence, record whether a task is valid, resolved_upstream, partially_met, obsolete or needs_replan. Must name the current upstream HEAD (basis_sha) and address EVERY acceptance criterion with met=yes|partial|no|unknown; yes/partial need commit, PR or file evidence (titles or keywords are not evidence). Does not close the task or touch reservations: closing/redefining still goes through a planning proposal.',
+    inputSchema: {
+      type: 'object',
+      additionalProperties: false,
+      required: ['task_id', 'status', 'basis_sha', 'criteria'],
+      properties: {
+        task_id: { type: 'string' },
+        status: { enum: ['valid', 'resolved_upstream', 'obsolete', 'partially_met', 'needs_replan'] },
+        basis_sha: { type: 'string', pattern: '^[0-9a-f]{40}$' },
+        criteria: {
+          type: 'array',
+          maxItems: 50,
+          items: {
+            type: 'object',
+            additionalProperties: false,
+            required: ['index', 'met', 'evidence'],
+            properties: { index: { type: 'integer', minimum: 0 }, met: { enum: ['yes', 'partial', 'no', 'unknown'] }, evidence: { type: 'array', maxItems: 20, items: evidenceItem }, note: { type: 'string', maxLength: 1000 } },
+          },
+        },
+        rationale_md: { type: 'string', maxLength: 4000 },
+        evidence: { type: 'array', maxItems: 50, items: evidenceItem },
+      },
+    },
+    run: (ctx, p, args) => recordVerdict(ctx, p, args, { verifyCommit: ctx.verifyUpstreamCommit ?? null }),
   },
   {
     name: 'get_workspace',

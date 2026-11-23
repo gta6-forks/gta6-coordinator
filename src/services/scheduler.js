@@ -6,6 +6,7 @@ import { AppError, DIFFICULTY_ORDER, PRIORITY_ORDER, randomId } from '../util.js
 import { matchesFilters, profileMismatches } from '../domain/task.js';
 import { isUniqueViolation, recordEvent } from '../store/store.js';
 import { getTask, loadTasks } from './catalog.js';
+import { dependencyResolvedUpstream, taskUpstreamSummary, upstreamIndex, upstreamReasons } from './upstream.js';
 
 export const HARD_TIMEOUT_HOURS = 24;
 
@@ -29,10 +30,10 @@ export function sweepExpired(ctx) {
   return expired.length;
 }
 
-function depSatisfied(depId, byId) {
+function depSatisfied(depId, byId, up = null) {
   const dep = byId.get(depId);
   if (!dep) return false; // unknown dependency: stay blocked (conservative)
-  return dep.status === 'done' || dep.data.state === 'closed';
+  return dep.status === 'done' || dep.data.state === 'closed' || (up ? dependencyResolvedUpstream(up, dep) : false);
 }
 
 function siblingVerifyIds(task) {
@@ -47,7 +48,7 @@ export function evaluate(ctx, task, participant, index) {
   if (d.readiness !== 'ready') reasons.push(`readiness:${d.readiness}`);
   if (d.state === 'closed') reasons.push('closed');
   if (task.status !== 'open') reasons.push(`status:${task.status}`);
-  for (const dep of d.depends_on) if (!depSatisfied(dep, index.byId)) reasons.push(`blocked_by:${dep}`);
+  for (const dep of d.depends_on) if (!depSatisfied(dep, index.byId, index.upstream)) reasons.push(`blocked_by:${dep}`);
   if (d.parent) {
     const parent = index.byId.get(d.parent);
     if (parent && parent.data.executable) reasons.push('parent_is_not_a_group');
@@ -72,6 +73,8 @@ export function evaluate(ctx, task, participant, index) {
   );
   if (expiredHere) reasons.push('you_let_this_task_expire_recently');
   reasons.push(...profileMismatches(d.requirements.implementation, participant.profile));
+  // Upstream reconciliation (mode-gated): resolved/obsolete/partially met/needs re-planning upstream => not distributed.
+  reasons.push(...upstreamReasons(index.upstream, task));
   return reasons;
 }
 
@@ -81,7 +84,7 @@ function buildIndex(ctx) {
   const activeByTask = new Map(
     ctx.store.all("SELECT * FROM reservations WHERE state = 'active'").map((r) => [r.task_id, r]),
   );
-  return { tasks, byId, activeByTask };
+  return { tasks, byId, activeByTask, upstream: upstreamIndex(ctx) };
 }
 
 function sortCandidates(tasks) {
@@ -120,7 +123,7 @@ export function listTasks(ctx, participant, { filters = {}, include_ineligible =
     if (!matchesFilters(t.data, filters)) continue;
     const reasons = evaluate(ctx, t, participant, index);
     if (reasons.length && !include_ineligible) continue;
-    out.push(publicTask(t, { eligible: reasons.length === 0, ineligible_reasons: reasons }));
+    out.push(publicTask(t, { eligible: reasons.length === 0, ineligible_reasons: reasons, upstream: taskUpstreamSummary(index.upstream, t) }));
   }
   return out;
 }
@@ -137,7 +140,8 @@ export function publicCatalog(ctx) {
       kind: t.data.kind,
       status: t.status,
       reserved: index.activeByTask.has(t.id),
-      blocked_by: t.data.depends_on.filter((dep) => !depSatisfied(dep, index.byId)),
+      blocked_by: t.data.depends_on.filter((dep) => !depSatisfied(dep, index.byId, index.upstream)),
+      upstream: taskUpstreamSummary(index.upstream, t),
       filters: t.data.filters,
     }));
 }
@@ -211,7 +215,7 @@ export function claim(ctx, participant, { task_id = null, filters = {}, idempote
         }
         recordEvent(ctx.store, now, participant.id, 'reservation.created', { reservation_id: id, task_id: t.id });
         const r = ctx.store.one('SELECT * FROM reservations WHERE id = ?', id);
-        return { status: 'reserved', reservation: publicReservation(r, policy, ctx.now()), task: publicTask(getTask(ctx.store, t.id)) };
+        return { status: 'reserved', reservation: publicReservation(r, policy, ctx.now()), task: publicTask(getTask(ctx.store, t.id), { upstream: taskUpstreamSummary(index.upstream, t) }) };
       }
       return { status: 'no_task_available', message: 'no unblocked task matches your profile and filters right now' };
     });
@@ -248,7 +252,9 @@ export function currentReservation(ctx, participant) {
   sweepExpired(ctx);
   const r = activeReservation(ctx, participant);
   if (!r) return { status: 'none' };
-  return { status: 'active', reservation: publicReservation(r, reservationPolicy(ctx.env), ctx.now()), task: publicTask(getTask(ctx.store, r.task_id)) };
+  const t = getTask(ctx.store, r.task_id);
+  // The holder is warned when upstream moved under them; the reservation itself is never cancelled automatically.
+  return { status: 'active', reservation: publicReservation(r, reservationPolicy(ctx.env), ctx.now()), task: publicTask(t, { upstream: taskUpstreamSummary(upstreamIndex(ctx), t) }) };
 }
 
 export { ownedActive, idempotent };
