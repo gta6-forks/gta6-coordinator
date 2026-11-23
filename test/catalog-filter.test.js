@@ -55,6 +55,9 @@ test('HTTP: /api/tasks keeps its shape, adds counts, filters and rejects unknown
   const open = await (await get('?status=open')).json();
   assert.ok(open.tasks.length > 0 && open.tasks.every((t) => t.status === 'open'));
   assert.deepEqual(open.counts, all.counts);
+  const several = await (await get('?status=open,cancelled')).json();
+  assert.equal(several.tasks.length, all.counts.open + all.counts.cancelled);
+  assert.ok(several.tasks.every((t) => t.status === 'open' || t.status === 'cancelled'));
   const bad = await get('?status=ready');
   assert.equal(bad.status, 400);
   const body = await bad.json();
