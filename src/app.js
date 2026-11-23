@@ -4,7 +4,7 @@ import { AppError, errorResponse, json } from './util.js';
 import { migrate } from './store/migrations.js';
 import { checkRateLimit, createAnonymous, linkGoogle, loginGoogle } from './services/auth.js';
 import { syncCatalog } from './services/catalog.js';
-import { publicCatalog, reservationPolicy } from './services/scheduler.js';
+import { filterCatalog, publicCatalog, reservationPolicy } from './services/scheduler.js';
 import { markMerged, reportCi } from './services/review.js';
 import { handleRpc } from './mcp/server.js';
 import { PendingGitWriteAdapter } from './github/write-adapter.js';
@@ -170,7 +170,8 @@ export function createApp({ store, env, now = () => Date.now(), gitWrite = new P
       }
       if (pathname === '/api/tasks' && request.method === 'GET') {
         await ensureSeeded();
-        return json({ tasks: publicCatalog(ctx), reservation_policy: reservationPolicy(env) });
+        const { tasks, counts } = filterCatalog(publicCatalog(ctx), url.searchParams.get('status'));
+        return json({ tasks, counts, reservation_policy: reservationPolicy(env) });
       }
       if (pathname === '/api/metrics' && request.method === 'GET') {
         await ensureSeeded();
