@@ -31,6 +31,17 @@ export function scanChanges(changes) {
 export const redact = (s) => String(s).replace(/(basic|bearer|token)\s+[A-Za-z0-9+\/=._-]+/gi, '$1 ***').replace(/gh[pousr]_[A-Za-z0-9_]+/g, '***');
 
 // One header per remote URL, so each token is only ever sent to its own repository.
+/**
+ * PR body. An issue of the integration repository itself is closed by the merge (`Closes #n`), so the fork issue
+ * does not stay open after the task is done. Anything else (another repository, an upstream issue, a local task) is
+ * only referenced: a merge here must never close an issue elsewhere.
+ */
+export function prBody(p) {
+  const m = /^([^/#\s]+\/[^#\s]+)#(\d+)$/.exec(String(p.issue ?? ''));
+  const ref = m && m[1].toLowerCase() === String(p.integration_repo ?? '').toLowerCase() ? `Closes #${m[2]}` : `Refs ${p.issue}`;
+  return `${ref}\n\nIntegrated from the coordinator work repository (commit ${p.head_sha}).`;
+}
+
 export function git(cwd, args, auth = {}) {
   const cfg = [];
   for (const [repo, token] of Object.entries(auth)) {
@@ -114,7 +125,7 @@ async function main() {
   if (!pr) {
     const res = await api(`/repos/${p.integration_repo}/pulls`, {
       method: 'POST',
-      body: JSON.stringify({ title: `${p.issue}: coordinator integration`, head: p.task_branch, base: p.base_branch ?? 'main', body: `Refs ${p.issue}\n\nIntegrated from the coordinator work repository (commit ${p.head_sha}).` }),
+      body: JSON.stringify({ title: `${p.issue}: coordinator integration`, head: p.task_branch, base: p.base_branch ?? 'main', body: prBody(p) }),
     });
     if (!res.ok) throw new Error(`create PR failed: ${res.status}`);
     pr = await res.json();

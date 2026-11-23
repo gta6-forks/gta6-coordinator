@@ -10,7 +10,7 @@ import { getTask, syncCatalog } from '../src/services/catalog.js';
 import { verifySignature } from '../src/github/webhooks.js';
 import { handleRpc } from '../src/mcp/server.js';
 import { findSecretLikeFields } from '../src/util.js';
-import { redact, scanChanges } from '../tools/integrate-workspace.mjs';
+import { prBody, redact, scanChanges } from '../tools/integrate-workspace.mjs';
 import { anon, baseEnv, clock, completion, createNodeStore, google, HOUR, task } from './helpers.js';
 
 class FakeProvisioner {
@@ -300,4 +300,13 @@ test('get_workspace_remote: a 1h push URL for the caller\'s own ready work repo 
   release(ctx, a.participant, r.reservation.id);
   const after = (await handleRpc(ctx, { jsonrpc: '2.0', id: 3, method: 'tools/call', params: { name: 'get_workspace_remote', arguments: { reservation_id: r.reservation.id } } }, `Bearer ${a.token}`)).result;
   assert.equal(after.isError, true, 'no URL once the reservation is over');
+});
+
+test('integration PR closes the fork issue on merge, but never names upstream or local tasks as closed', () => {
+  const p = { integration_repo: 'gta6-forks/gta6-coordinator', head_sha: 'a'.repeat(40) };
+  assert.match(prBody({ ...p, issue: 'gta6-forks/gta6-coordinator#6' }), /^Closes #6\n/);
+  assert.match(prBody({ ...p, issue: 'gta6-forks/Leonida#3' }), /^Refs gta6-forks\/Leonida#3\n/);
+  assert.match(prBody({ ...p, issue: 'R0Y00/Xbox2Windows#77' }), /^Refs R0Y00\/Xbox2Windows#77\n/);
+  assert.match(prBody({ ...p, issue: 'local:plan/upstream-cleanup' }), /^Refs local:plan\/upstream-cleanup\n/);
+  assert.match(prBody({ ...p, issue: 'gta6-forks/gta6-coordinator#6' }), new RegExp(`commit ${'a'.repeat(40)}`));
 });
