@@ -239,6 +239,8 @@ test('conditional requests: a second run is served by 304s; cron honours the int
   const first = await checkUpstream(ctx);
   assert.ok(first.http.not_modified < first.http.requests, 'first run fetches (repeat URLs in one run revalidate)');
   ctx.now.advance(HOUR);
+  await checkUpstream(ctx, { force: true }); // without a baseline date, the 2nd run starts asking "commits since first seen"
+  ctx.now.advance(HOUR);
   const second = await checkUpstream(ctx, { force: true });
   assert.equal(second.http.not_modified, second.http.requests, 'nothing changed => all 304');
   assert.equal((await scheduledUpstreamCheck(ctx)).skipped, 'interval', 'a full run just happened');
@@ -355,4 +357,15 @@ test('a never-seen file or section asks for review instead of re-planning', asyn
   const t = statusOf(ctx, 'draft:Freminet/ScarlettX/child-process-boot');
   assert.equal(t.status, 'needs_review');
   assert.ok(t.reasons.includes('source_section_not_found:README.md#Current Limitations'));
+});
+
+
+test('signals are sticky: a file changed since the task was written stays needs_review on later runs', async () => {
+  const { ctx, gh } = await world('report', { UPSTREAM_BASELINE_SINCE: '2026-11-21T00:00:00Z' });
+  gh.st.commits[`${SCX}:README.md`] = [{ sha: hex('7'), commit: { committer: { date: '2026-11-22T01:00:00Z' }, message: 'Fix child process boot' }, html_url: 'u' }];
+  await checkUpstream(ctx);
+  assert.equal(statusOf(ctx, 'draft:Freminet/ScarlettX/child-process-boot').status, 'needs_review');
+  ctx.now.advance(HOUR);
+  await checkUpstream(ctx, { force: true });
+  assert.equal(statusOf(ctx, 'draft:Freminet/ScarlettX/child-process-boot').status, 'needs_review', 'not lost on the second run');
 });

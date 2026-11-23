@@ -183,8 +183,10 @@ export async function checkTask(reader, d, upstream, head, prev, cfg, now) {
     } else {
       // A PR merged upstream that references the still-open origin issue means part of the work may already be done.
       const tl = await reader.timeline(upstream, ref.number);
-      if (!tl.ok) complete = false;
-      else {
+      if (!tl.ok) {
+        complete = false;
+        reasons.push(`timeline_unavailable:#${ref.number}:${tl.error ?? tl.status}`);
+      } else {
         const from = sinceOf(ref);
         const merged = tl.data.filter((e) => e.pr?.merged_at && (from === null || toMs(e.pr.merged_at) > from)).map((e) => e.pr);
         const uniq = [...new Map(merged.map((p) => [p.url, p])).values()];
@@ -194,9 +196,11 @@ export async function checkTask(reader, d, upstream, head, prev, cfg, now) {
           candidates.push(ref.context ? 'needs_review' : 'partially_met');
         }
       }
-      const since = base?.updated_at ?? ref.retrieved_at;
+      // Relative to when the task was written, not to the first observation: a signal stays until a planner verdict.
+      const since = ref.retrieved_at ?? cfg.baselineSince ?? base?.updated_at;
       const sinceMs = toMs(since);
-      if (sinceMs !== null && toMs(i.updated_at) > sinceMs + (base ? 0 : 86_400_000)) {
+      const grace = String(since ?? '').length === 10 ? 86_400_000 : 0; // date-only retrieved_at
+      if (sinceMs !== null && toMs(i.updated_at) > sinceMs + grace) {
         reasons.push(`source_issue_updated:#${ref.number}`);
         evidence.push({ kind: 'issue', ref: i.html_url ?? url, updated_at: i.updated_at, since, observed_at: iso(now) });
         candidates.push('needs_review');
@@ -218,8 +222,9 @@ export async function checkTask(reader, d, upstream, head, prev, cfg, now) {
       continue;
     }
     const base = baseline.files[ref.path];
-    const sinceMs = base ? base.at : toMs(ref.retrieved_at) ?? toMs(cfg.baselineSince);
-    const changed = base ? base.sha !== r.data.sha : sinceMs !== null;
+    // Commits since the task was written (ETag-cached); sticky until a planner verdict, like the issue signals.
+    const sinceMs = toMs(ref.retrieved_at) ?? toMs(cfg.baselineSince) ?? base?.at ?? null;
+    const changed = sinceMs !== null;
     const norm = (h) => String(h).toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
     const hasHeading = ref.heading && Array.isArray(r.data.headings) ? r.data.headings.some((h) => norm(h) === norm(ref.heading)) : null;
     if (hasHeading === false) {
