@@ -146,6 +146,26 @@ export function publicCatalog(ctx) {
     }));
 }
 
+/** Task statuses, as the store accepts them (src/store/migrations.js). `readiness` values such as `ready` are not statuses. */
+export const TASK_STATUSES = ['open', 'in_review', 'needs_replan', 'approved', 'done', 'cancelled'];
+
+/**
+ * Optional status filter for the public catalog. `param` is the raw `status` query value (null when absent):
+ * comma-separated statuses; any unknown value is a 400. `counts` covers every catalog task, before filtering.
+ */
+export function filterCatalog(tasks, param) {
+  const counts = Object.fromEntries(TASK_STATUSES.map((s) => [s, 0]));
+  for (const t of tasks) if (t.status in counts) counts[t.status] += 1;
+  if (param === null || param === undefined) return { tasks, counts };
+  const wanted = String(param).split(',').map((s) => s.trim());
+  const invalid = [...new Set(wanted.filter((s) => !TASK_STATUSES.includes(s)))];
+  if (invalid.length) {
+    throw new AppError('invalid_status_filter', `unknown status: ${invalid.map((s) => JSON.stringify(s)).join(', ')}`, 400, { invalid, accepted: TASK_STATUSES });
+  }
+  const wantedSet = new Set(wanted);
+  return { tasks: tasks.filter((t) => wantedSet.has(t.status)), counts };
+}
+
 function idempotent(ctx, participant, key, op, compute) {
   if (!key) return compute();
   if (typeof key !== 'string' || key.length < 8 || key.length > 100) {

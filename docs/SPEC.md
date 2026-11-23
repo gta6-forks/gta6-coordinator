@@ -278,7 +278,7 @@ Revisão: `verifying → awaiting_ci → ready_to_merge → merged`, ou `→ cha
 |---|---|---|
 | `GET /` , `/onboarding.html` | público | landing e onboarding (static assets) |
 | `GET /api/config` | público | login Google ligado?, URL do MCP, TTL |
-| `GET /api/tasks` | público | catálogo sem dados pessoais |
+| `GET /api/tasks` | público | catálogo sem dados pessoais. Responde `{ tasks, counts, reservation_policy }`; `counts` traz o total por status de todo o catálogo, calculado antes do filtro. `?status=open,in_review` (opcional, separado por vírgula) devolve só esses status. Valores aceitos, exatamente e diferenciando maiúsculas: `open`, `in_review`, `needs_replan`, `approved`, `done`, `cancelled`. `ready` é readiness, não status. Valor desconhecido ou vazio (`?status=`, `open,,done`) → 400 `invalid_status_filter` com `details.invalid` e `details.accepted` |
 | `POST /auth/anonymous` | público, mesma origem | cria participante anônimo |
 | `GET /auth/google/start`, `/auth/google/callback` | público | OIDC |
 | `POST /mcp` | token | MCP |
