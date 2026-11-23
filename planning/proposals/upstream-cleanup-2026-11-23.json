@@ -1,0 +1,254 @@
+{
+  "schema_version": 1,
+  "id": "upstream-cleanup-2026-11-23",
+  "based_on": {
+    "roadmap_version": 1,
+    "snapshot_at": "2026-11-23T06:06:38.502Z"
+  },
+  "rationale_md": "Upstream reconciliation (`local:plan/upstream-cleanup`). Each close cites the planner verdict recorded with evidence against the current upstream HEAD (commit, PR or file; never title or keyword). Adds the operational task for the public catalog (status filter on /api/tasks) in gta6-forks/gta6-coordinator.",
+  "operations": [
+    {
+      "op": "close_issue",
+      "id": "R0Y00/Xbox2Windows#77",
+      "reason": "Obsolete (verdict uv_L8hEfo8YvjXA): upstream closed #77 as completed on 2026-11-21 keeping the Windows-compatible behaviour for an empty relocation directory, pinned by PR https://github.com/R0Y00/Xbox2Windows/pull/115 (e44af731); #171 covers the zero-address case. Rejecting the image would contradict upstream."
+    },
+    {
+      "op": "close_issue",
+      "id": "ItsNotRexed/Leonida#29",
+      "reason": "Resolved upstream (verdict uv_aRcOJMyd-gP0): pin bumped in 013d67fd (PR #422, re-pinned in #650) and README/metric updated by PR https://github.com/ItsNotRexed/Leonida/pull/3292 (382,781 models recovered); upstream issue closed as completed."
+    },
+    {
+      "op": "close_issue",
+      "id": "breadbbbb/rpf9-explorer#1",
+      "reason": "Obsolete (verdict uv_429nhxozLAUF): the PR this task validated, https://github.com/breadbbbb/rpf9-explorer/pull/1, was merged by the maintainer (f05d7d93) on 2026-11-21."
+    },
+    {
+      "op": "close_issue",
+      "id": "gta6-forks/ScarlettX#3",
+      "reason": "Obsolete (verdict uv_inWyySahrRFz): upstream commit 2b2810397ce9 \"fix: resolve shim DLLs ahead of System32 for child-process boot\" (Freminet/ScarlettX) fixed it; README Current Limitations now documents the DLL-directory approach."
+    },
+    {
+      "op": "close_issue",
+      "id": "gta6-forks/americas-recomp#4",
+      "reason": "Obsolete (verdict uv_fwU_sIA1Wwc0): realdody/americas-recomp 5c41e6b6 (xbox-series) implements XLaunchUri, XLaunchNewGame and XLaunchRestartOnCrash with test_launch.cpp; xgr_status.json shows IXLauncherImpl 3/3."
+    },
+    {
+      "op": "close_issue",
+      "id": "gta6-forks/Xbox2Windows#1",
+      "reason": "Obsolete (verdict uv_37hv1PWSPr0m): upstream PR https://github.com/R0Y00/Xbox2Windows/pull/134 (ecb9160e) decodes the full ERA attribute word with tests for 0x05e50000/0xa8004000 and docs in docs/experiments.md; a fork PR would duplicate it."
+    },
+    {
+      "op": "close_issue",
+      "id": "gta6-forks/americas-recomp#3",
+      "reason": "Partially met (verdict uv_9PnP5MZ8aLm-): 5c41e6b6 implemented 13 of the 23 XGameUi methods; the remaining 10 are rescoped in new:recomp-xgameui-rest."
+    },
+    {
+      "op": "create_issue",
+      "ref": "new:recomp-xgameui-rest",
+      "repo": "gta6-forks/americas-recomp",
+      "title": "xgr: remaining 10 XGameUi methods (multiplayer-activity invite, text entry, state share)",
+      "body_md": "Rescope of gta6-forks/americas-recomp#3 after upstream 5c41e6b6 implemented 13 of its 23 methods.\n\nStill on the logging stub (docs/xbox/xgr_status.json @ f1c25d72): IXGameUiImpl2 `XGameUiShowMultiplayerActivityGameInviteAsync/Result`, `XGameUiTextEntryOpen/Close/GetState/GetExtents/UpdatePositionHint/UpdateVisibility`; IXGameUiImpl3 `XGameUiShowStateShareAsync/Result`.\n\n## Acceptance criteria\n- An unimplemented method fails; never return fabricated success; general behavior, not that of one title.\n- Each of the 10 methods is either implemented from the public GDK documentation (behaviour listed in the xgr README) or stays on the logging stub with the reason in the README.\n- test_gameui.cpp covers every newly implemented method, including invalid-argument cases.\n- docs/xbox/xgr_status.json regenerated with status_json.py; README count updated.\n- Conventional Commits, no code comments, check_conventions.py, complete PR template.",
+      "task": {
+        "kind": "issue",
+        "role": "execute",
+        "type": "operational",
+        "priority": "p2",
+        "difficulty": "medium",
+        "milestone": "M4-runtime",
+        "readiness": "ready",
+        "parent": "gta6-forks/americas-recomp#2",
+        "instructions_md": "Implement, where the public GDK documentation gives a headless-PC answer, the 10 XGameUi methods still on the logging stub (see docs/xbox/xgr_status.json). Follow the existing headless game UI in runtime/impl_system.cpp. Methods without a documented answer stay failing, with the reason in the xgr README. Never return made-up success.",
+        "requirements": {
+          "implementation": {
+            "required": [
+              {
+                "kind": "os",
+                "value": [
+                  "windows"
+                ],
+                "confidence": "confirmed",
+                "source": "tools/xbox/platform/xgr/README.md (x64 VS prompt, cl)"
+              },
+              {
+                "kind": "tool",
+                "value": "MSVC (x64 VS prompt), Python 3 (python -I), Xodus IDL headers (LGPL, not committed)",
+                "confidence": "confirmed",
+                "source": "tools/xbox/platform/xgr/README.md"
+              },
+              {
+                "kind": "game_files",
+                "value": "no",
+                "confidence": "inferred",
+                "source": "implementing does not require the game"
+              }
+            ],
+            "optional": [],
+            "suggested": [
+              {
+                "kind": "skill",
+                "value": "Compare with ScarlettX's xgameruntime",
+                "confidence": "inferred",
+                "source": "ScarlettX/README.md"
+              }
+            ]
+          },
+          "validation": {
+            "required": [
+              {
+                "kind": "os",
+                "value": [
+                  "windows"
+                ],
+                "confidence": "confirmed",
+                "source": "tests are Windows executables (xgr README)"
+              },
+              {
+                "kind": "game_files",
+                "value": "no",
+                "confidence": "inferred",
+                "source": "test_*.cpp clients use the DLL directly"
+              }
+            ],
+            "optional": [
+              {
+                "kind": "game_files",
+                "value": "yes",
+                "confidence": "confirmed",
+                "source": "README: real use only when the executable is available"
+              }
+            ],
+            "suggested": []
+          }
+        },
+        "acceptance": [
+          {
+            "text": "An unimplemented method fails; never return fabricated success; general behavior, not that of one title.",
+            "source": "americas-recomp/AGENTS.md",
+            "confidence": "confirmed"
+          },
+          {
+            "text": "Each of the 10 methods is either implemented from the public GDK documentation (behaviour listed in the xgr README) or stays on the logging stub with the reason in the README.",
+            "source": "tools/xbox/platform/xgr/README.md conventions",
+            "confidence": "inferred"
+          },
+          {
+            "text": "test_gameui.cpp covers every newly implemented method, including invalid-argument cases.",
+            "source": "tools/xbox/platform/xgr test_*.cpp pattern",
+            "confidence": "inferred"
+          },
+          {
+            "text": "docs/xbox/xgr_status.json regenerated with status_json.py; README count updated.",
+            "source": "tools/xbox/platform/xgr/status_json.py",
+            "confidence": "confirmed"
+          },
+          {
+            "text": "Conventional Commits, no code comments, check_conventions.py, complete PR template.",
+            "source": "americas-recomp/AGENTS.md",
+            "confidence": "confirmed"
+          }
+        ],
+        "deliverables": [
+          "code",
+          "tests"
+        ],
+        "sources": [
+          {
+            "kind": "file",
+            "ref": "americas-recomp/docs/xbox/xgr_status.json",
+            "retrieved_at": "2026-11-23"
+          }
+        ],
+        "restrictions": [
+          "Never return fabricated success (americas-recomp/AGENTS.md)",
+          "Do not commit the LGPL Xodus IDLs or generated stub sources (xgr README)",
+          "No game files"
+        ]
+      }
+    },
+    {
+      "op": "create_issue",
+      "ref": "new:coord-tasks-status-filter",
+      "repo": "gta6-forks/gta6-coordinator",
+      "title": "GET /api/tasks: optional status filter and counts by status",
+      "body_md": "`GET /api/tasks` returns every task, including cancelled and done ones, so the landing page and other public consumers miscount open work.\n\n## Acceptance criteria\n- `GET /api/tasks?status=open,ready` returns only tasks whose `status` is in the comma-separated list; without the parameter the response is unchanged.\n- Unknown status values give HTTP 400 with a JSON error naming the invalid value(s) and the accepted ones.\n- The response carries a `counts` object with the number of tasks per status (computed before filtering).\n- Unit tests cover: no filter, one status, several statuses, an unknown status (400) and the counts.\n- `npm test` passes; docs/API or README mention the parameter.\n\n## Restrictions\n- No secrets in code or tests; no change to MCP tools.",
+      "task": {
+        "kind": "issue",
+        "role": "execute",
+        "type": "operational",
+        "priority": "p2",
+        "difficulty": "low",
+        "milestone": "M1-entrada",
+        "readiness": "ready",
+        "instructions_md": "# Status filter for GET /api/tasks\n\nIn `src/worker.js` (route `/api/tasks`), accept an optional `status` query parameter (comma-separated). Validate each value against the statuses the catalog uses; unknown -> 400 JSON error. Add `counts` (per status, before filtering). Add tests under `test/` with the existing test style (`node --test`). Run `npm test`.",
+        "requirements": {
+          "implementation": {
+            "required": [
+              {
+                "kind": "tool",
+                "value": "Node.js 20+ and npm",
+                "confidence": "confirmed",
+                "source": "coordinator package.json"
+              },
+              {
+                "kind": "game_files",
+                "value": "no",
+                "confidence": "confirmed",
+                "source": "coordinator code only"
+              }
+            ],
+            "optional": [],
+            "suggested": []
+          },
+          "validation": {
+            "required": [
+              {
+                "kind": "game_files",
+                "value": "no",
+                "confidence": "confirmed",
+                "source": "npm test"
+              }
+            ],
+            "optional": [],
+            "suggested": []
+          }
+        },
+        "acceptance": [
+          {
+            "text": "GET /api/tasks?status=a,b returns only tasks with those statuses; no parameter keeps the current response.",
+            "source": "local:plan/upstream-cleanup",
+            "confidence": "confirmed"
+          },
+          {
+            "text": "Unknown status values give HTTP 400 naming the invalid and the accepted values.",
+            "source": "local:plan/upstream-cleanup",
+            "confidence": "confirmed"
+          },
+          {
+            "text": "Response includes counts per status, computed before filtering.",
+            "source": "local:plan/upstream-cleanup",
+            "confidence": "confirmed"
+          },
+          {
+            "text": "Tests cover no filter, one, several, unknown (400) and counts; npm test passes.",
+            "source": "local:plan/upstream-cleanup",
+            "confidence": "confirmed"
+          }
+        ],
+        "deliverables": [
+          "code",
+          "tests"
+        ],
+        "sources": [
+          {
+            "kind": "coordinator",
+            "ref": "local:plan/upstream-cleanup"
+          }
+        ],
+        "restrictions": [
+          "No secrets in code or tests",
+          "No change to MCP tools"
+        ]
+      }
+    }
+  ]
+}
