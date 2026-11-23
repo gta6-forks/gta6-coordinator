@@ -26,6 +26,11 @@ async function main() {
 
 main().catch(async (err) => {
   console.error(redact(err.message));
+  // The reservation ended before seeding (released/expired => the work repository was archived): nothing to seed.
+  if (/archived so it is read-only/.test(String(err.message))) {
+    console.log('::notice::work repository already archived (reservation ended before seeding); skipped');
+    process.exit(0);
+  }
   try {
     const p = JSON.parse(process.env.P ?? '{}');
     if (p.workspace_id) await callback({ workspace_id: p.workspace_id, outcome: 'seed_failed', detail: redact(err.message).slice(0, 500) });
