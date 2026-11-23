@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "id": "replan-coordinator-6-docs-2026-11-23",
+  "based_on": {
+    "roadmap_version": 1,
+    "snapshot_at": "2026-11-23T06:19:04.071Z"
+  },
+  "rationale_md": "Re-plan of gta6-forks/gta6-coordinator#6 after review rev_34a3d14f01bf82dc rejected PR #7 (commit 40763bb).\n\nBoth reviews agree the code and tests meet every criterion except one: \"docs/API or README mention the parameter\". The task definition is correct and needs no split or rescope; the next delivery only adds the docs (docs/SPEC.md GET /api/tasks row: `status`, the six accepted values, case-sensitive, empty values are 400, `invalid_status_filter` with details.invalid/accepted, and `counts`). Raise priority to p1 so it is finished first: the work is almost done and already on task/issue-6.",
+  "operations": [
+    {
+      "op": "set_priority",
+      "id": "gta6-forks/gta6-coordinator#6",
+      "priority": "p1"
+    }
+  ]
+}
